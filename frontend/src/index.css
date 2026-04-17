@@ -147,7 +147,8 @@ p {
 }
 
 .page-frame {
-  width: min(var(--container), calc(100vw - 40px));
+  width: 99%;
+  max-width: none;
   margin: 0 auto;
   padding-bottom: 96px;
 }
@@ -156,18 +157,12 @@ p {
   position: sticky;
   top: 18px;
   z-index: 20;
-  width: min(var(--container), calc(100vw - 40px));
+  width: 100%;
   margin: 0 auto 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 14px 18px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: rgba(7, 11, 22, 0.78);
-  backdrop-filter: blur(18px);
-  box-shadow: var(--shadow-soft);
 }
 
 .brand-mark {
@@ -194,6 +189,12 @@ p {
   gap: 6px;
   flex-wrap: wrap;
   justify-content: center;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(7, 11, 22, 0.78);
+  backdrop-filter: blur(18px);
+  box-shadow: var(--shadow-soft);
 }
 
 .topnav__link {
@@ -1925,14 +1926,14 @@ p {
     padding: 12px;
   }
 
-  .page-frame,
-  .topnav {
-    width: min(var(--container), calc(100vw - 24px));
+  .page-frame {
+    width: 99%;
   }
 
   .topnav {
-    padding: 14px;
     justify-content: center;
+    flex-wrap: wrap;
+    gap: 14px;
   }
 
   .topnav__actions,

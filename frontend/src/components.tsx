@@ -32,15 +32,12 @@ export function TopNav() {
     ['Expenses', '/expenses'],
     ['Simulator', '/simulator'],
     ['Goals', '/goals'],
-    ['Scenarios', '/scenarios'],
-    ['Insights', '/insights'],
   ] as const
 
   return (
     <header className="topnav">
       <div className="topnav__brand">
         <Link to="/" className="brand-mark" aria-label="Expense Autopsy home">
-          <span className="brand-mark__dot" />
           <span>Expense Autopsy</span>
         </Link>
       </div>
