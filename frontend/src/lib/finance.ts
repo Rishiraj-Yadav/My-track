@@ -570,7 +570,7 @@ export const projectWithEvents = (plan: SimPlan, events: TimelineEvent[]): Month
 export const monteCarlo = (plan: SimPlan, options: { runs: number }, events: TimelineEvent[] = []): MonteCarloBand[] => {
   const results: number[][] = Array.from({ length: plan.durationMonths }, () => [])
   const meanAnnual = plan.annualReturn / 100
-  const volatility = 0.15 
+  const volatility = 0.15
 
   for (let r = 0; r < options.runs; r++) {
     let corpus = plan.initialCorpus || 0
@@ -588,7 +588,7 @@ export const monteCarlo = (plan: SimPlan, options: { runs: number }, events: Tim
       const u1 = Math.max(Math.random(), Number.EPSILON)
       const u2 = Math.random()
       const z0 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2)
-      
+
       const monthlyReturn = (meanAnnual / 12) + (volatility / Math.sqrt(12)) * z0
       corpus = corpus * (1 + monthlyReturn)
 

@@ -38,33 +38,22 @@ function Model({
   const group = useRef<THREE.Group>(null)
   const { scene } = useGLTF('/model.glb')
 
-  const cloned = useMemo(() => {
-    const clone = scene.clone(true)
-    clone.traverse((obj) => {
-      if (!(obj instanceof THREE.Mesh)) return
-
-      const materials = Array.isArray(obj.material) ? obj.material : [obj.material]
-      obj.material = materials.map((material) => {
-        if (!(material instanceof THREE.MeshStandardMaterial)) return material
-        const patched = material.clone()
-        patched.emissive = new THREE.Color('#00FF88')
-        patched.emissiveIntensity = 0.08
-        patched.envMapIntensity = 1.8
-        return patched
-      })
-    })
-
-    clone.updateWorldMatrix(true, true)
-    const bounds = new THREE.Box3().setFromObject(clone)
-    const size = bounds.getSize(new THREE.Vector3())
-    const center = bounds.getCenter(new THREE.Vector3())
+  const { scale, centerOffset } = useMemo(() => {
+    // Ensure world matrices are up to date before calculating bounding box
+    scene.updateMatrixWorld(true)
+    const box = new THREE.Box3().setFromObject(scene)
+    const size = box.getSize(new THREE.Vector3())
+    const center = box.getCenter(new THREE.Vector3())
+    
     const maxDim = Math.max(size.x, size.y, size.z) || 1
-    const scale = 3.6 / maxDim // Increased base scale slightly for better visibility
+    // We want the pig model to fit nicely in view
+    const targetSize = 4.5
+    const scaleFactor = targetSize / maxDim
 
-    // Reset position to center * scale to keep it in the camera's view
-    clone.position.set(-center.x * scale, -center.y * scale, -center.z * scale)
-    clone.scale.setScalar(scale)
-    return clone
+    return { 
+      scale: scaleFactor, 
+      centerOffset: new THREE.Vector3(-center.x, -center.y, -center.z) 
+    }
   }, [scene])
 
   useFrame((state) => {
@@ -73,22 +62,13 @@ function Model({
       group.current.rotation.y += rotationSpeed * 0.016
       group.current.position.y = Math.sin(elapsed * 0.6) * 0.12
     }
-
-    cloned.traverse((obj) => {
-      if (!(obj instanceof THREE.Mesh)) return
-
-      const materials = Array.isArray(obj.material) ? obj.material : [obj.material]
-      materials.forEach((material) => {
-        if (material instanceof THREE.MeshStandardMaterial) {
-          material.emissiveIntensity = glowIntensity
-        }
-      })
-    })
   })
 
   return (
     <group ref={group}>
-      <primitive object={cloned} />
+      <group scale={scale}>
+        <primitive object={scene} position={centerOffset} />
+      </group>
     </group>
   )
 }

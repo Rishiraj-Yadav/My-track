@@ -38,7 +38,7 @@ export function InsightsPage() {
         <div>
           <Pill tone="teal">Insights</Pill>
           <h1>Package habits into a personality, then show the rupee consequence.</h1>
-          <p>Clean signals, low cognitive load, and enough visual polish to feel premium in a demo room.</p>
+          <p>Clear signals, low cognitive load, and enough visual polish to feel premium on any device.</p>
         </div>
       </section>
 

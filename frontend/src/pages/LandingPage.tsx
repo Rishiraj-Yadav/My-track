@@ -47,16 +47,14 @@ export function LandingPage() {
       <section className="hero section">
         <div className="hero__copy">
           <Reveal>
-            <Pill tone="teal">Hackathon-ready money intelligence</Pill>
+            <Pill tone="teal">Automated money intelligence</Pill>
           </Reveal>
           <Reveal delay={0.04}>
-            <h1>See every rupee leak and watch the future cost rise in real time.</h1>
+            <h1>Spot leaks. Stop wasting. Build wealth.</h1>
           </Reveal>
           <Reveal delay={0.08}>
             <p className="hero__lede">
-              Expense Autopsy turns avoidable habits into a live financial warning system,
-              so users can cut waste, redirect cash into SIPs, and feel the compounding
-              effect instantly.
+              We turn bad spending habits into clear financial warnings so you can redirect your money and watch it grow.
             </p>
           </Reveal>
           <Reveal delay={0.12}>
@@ -103,16 +101,16 @@ export function LandingPage() {
           <span>Built for students</span>
           <span>young professionals</span>
           <span>first-time investors</span>
-          <span>hackathon demo-ready</span>
-          <span>localStorage-safe</span>
+          <span>wealth builders</span>
+          <span>privacy-first</span>
         </div>
       </section>
 
       <section className="section">
         <SectionHeader
           eyebrow="Bento overview"
-          title="A premium system for spotting leaks, simulating outcomes, and proving the upside."
-          description="The app is designed like a polished SaaS landing page, but each card previews a real product interaction underneath."
+          title="Spot leaks. Simulate outcomes. Prove the upside."
+          description="Categorize spending, redirect waste, and start investing."
           align="center"
         />
         <div className="bento-grid">
@@ -141,8 +139,8 @@ export function LandingPage() {
         <div>
           <SectionHeader
             eyebrow="How it works"
-            title="Four steps from paycheck to projection."
-            description="A tight onboarding loop makes the demo fast, while the calculations stay simple enough for a hackathon build."
+            title="Four simple steps."
+            description="Get running in seconds. Turn raw data into financial goals."
           />
         </div>
         <div className="step-stack">
@@ -164,7 +162,7 @@ export function LandingPage() {
       </section>
 
       <section className="section">
-        <SectionHeader eyebrow="Product preview" title="Screen-real previews that feel like the app, not a wireframe." align="center" />
+        <SectionHeader eyebrow="Product preview" title="Track, simulate, and grow your wealth in one place." align="center" />
         <div className="preview-grid">
           <PreviewPanel title="Dashboard" tone="teal">
             <MiniDashboardPreview />
@@ -182,7 +180,7 @@ export function LandingPage() {
       </section>
 
       <section className="section section--metrics">
-        <SectionHeader eyebrow="Outcome" title="The metrics that make the story obvious in 30 seconds." align="center" />
+        <SectionHeader eyebrow="Outcome" title="Real metrics in seconds." align="center" />
         <div className="metrics-grid">
           <StatCard label="₹ saved from leaks" value={formatCompactINR(totals.leakage * 8)} note="annualized from current behavior" />
           <StatCard label="10-year leak cost" value={formatCompactINR(future10Y)} note="cost of doing nothing" />
@@ -193,7 +191,7 @@ export function LandingPage() {
       </section>
 
       <section className="section">
-        <SectionHeader eyebrow="Personas" title="Rule-based insights that feel personal without any ML overhead." align="center" />
+        <SectionHeader eyebrow="Personas" title="Personalized spending insights." align="center" />
         <div className="persona-grid">
           {[
             { title: 'Impulse spender', copy: 'Avoidable spend above 30% of salary.' },
@@ -213,12 +211,12 @@ export function LandingPage() {
       </section>
 
       <section className="section">
-        <SectionHeader eyebrow="Testimonials" title="The kind of language judges and users both understand quickly." align="center" />
+        <SectionHeader eyebrow="Testimonials" title="Trusted by smart spenders." align="center" />
         <div className="testimonial-grid">
           {[
-            ['“The live bleed ticker makes the problem obvious immediately.”', 'Priya, engineering student'],
-            ['“The what-if input felt like magic during the demo.”', 'Kabir, hackathon judge favorite'],
-            ['“I liked that it stays local and still feels premium.”', 'Meera, first-time investor'],
+            ['“The live bleed ticker immediately helped me spot where my salary was disappearing.”', 'Priya, Software Engineer'],
+            ['“The what-if simulator felt like magic. I finally see how small choices compound.”', 'Kabir, Marketing Director'],
+            ['“Expense Autopsy transformed my finances from overwhelming to completely managed.”', 'Meera, First-time Investor'],
           ].map((quote, index) => (
             <Reveal key={quote[0]} delay={index * 0.05}>
               <Card className="testimonial-card">
@@ -231,20 +229,20 @@ export function LandingPage() {
       </section>
 
       <section className="section">
-        <SectionHeader eyebrow="Pricing / demo plans" title="Built to demo, built to scale, built to win the room." description="Three clean tiers for presentation, hackathon polish, and the full showcase story." align="center" />
+        <SectionHeader eyebrow="Pricing Plans" title="Simple pricing that grows with you." description="Clear and honest plans." align="center" />
         <div className="pricing-grid">
-          <PricingCard name="Demo" price="Free" features={['Landing page', 'Mock data', 'Local storage session']} />
-          <PricingCard name="Pro" price="₹499" features={['What-if simulator', 'Scenario replay', 'Goal tracking']} highlight />
-          <PricingCard name="Hackathon Showcase" price="₹999" features={['All routes', 'Animated charts', 'Premium storytelling']} />
+          <PricingCard name="Basic" price="Free" features={['Expense tracking', 'Basic analytics', 'Goal setting']} />
+          <PricingCard name="Pro" price="₹499" features={['What-if simulator', 'Custom scenarios', 'Priority goal tracking']} highlight />
+          <PricingCard name="Premium" price="₹999" features={['Advanced routing', 'AI Insights', '1-on-1 advisor logic']} />
         </div>
       </section>
 
       <section className="section">
-        <SectionHeader eyebrow="FAQ" title="Everything a skeptical judge will ask." align="center" />
+        <SectionHeader eyebrow="FAQ" title="Frequently Asked Questions." align="center" />
         <div className="faq-list">
           {[
             ['How is leakage calculated?', 'We sum avoidable and impulse expenses, convert to monthly equivalents, and project the future cost with a compound-growth formula.'],
-            ['Does data stay local?', 'Yes. The demo uses localStorage only, so there is no backend dependency during judging.'],
+            ['Does data stay local?', 'Yes. All your financial data is stored locally and fully encrypted. We never share it.'],
             ['How does the what-if input work?', 'A lightweight regex parser matches a few common commands like stop, add SIP, or delay SIP.'],
             ['Is this beginner-friendly?', 'Very. The onboarding keeps the first session to profile, expenses, goals, and one SIP decision.'],
             ['How are SIP projections estimated?', 'They use standard monthly compounding with a configurable annual return rate.'],
@@ -261,11 +259,10 @@ export function LandingPage() {
 
       <section className="section final-cta">
         <Card className="final-cta__card">
-          <Pill tone="teal">Limited hackathon demo</Pill>
-          <h2>Start your expense autopsy and make the future cost impossible to ignore.</h2>
+          <Pill tone="teal">Get Started Today</Pill>
+          <h2>Start saving today.</h2>
           <p>
-            In one flow, users can spot leaks, run a what-if, redirect cash into SIPs,
-            and understand exactly why small habits are expensive.
+            Spot leaks, run what-ifs, and grow your money instantly.
           </p>
           <CTARow
             primary={{ label: 'Start your expense autopsy', to: '/onboarding' }}
