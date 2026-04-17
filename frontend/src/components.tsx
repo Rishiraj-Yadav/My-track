@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import type { ReactNode } from 'react'
 import { Link, NavLink } from 'react-router-dom'
-import { ArrowRight, CheckCircle2 } from 'lucide-react'
+import { ArrowRight, CheckCircle2, User } from 'lucide-react'
 
 type ShellProps = {
   children: ReactNode
@@ -54,8 +54,8 @@ export function TopNav() {
       </nav>
       <div className="topnav__actions">
         <Link to="/profile" className="button button--primary">
+          <User size={16} />
           Profile
-          <ArrowRight size={16} />
         </Link>
       </div>
     </header>
