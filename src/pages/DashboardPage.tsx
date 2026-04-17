@@ -27,7 +27,7 @@ export function DashboardPage() {
     parsed.sipImpact,
     sip.annualReturn,
     sip.durationMonths,
-    sip.delayMonths,
+    parsed.delayMonths ?? sip.delayMonths,
   )
 
   const topLeaks = expenses
