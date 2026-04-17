@@ -59,9 +59,10 @@ function Model({
     const size = bounds.getSize(new THREE.Vector3())
     const center = bounds.getCenter(new THREE.Vector3())
     const maxDim = Math.max(size.x, size.y, size.z) || 1
-    const scale = 2.8 / maxDim
+    const scale = 3.6 / maxDim // Increased base scale slightly for better visibility
 
-    clone.position.sub(center)
+    // Reset position to center * scale to keep it in the camera's view
+    clone.position.set(-center.x * scale, -center.y * scale, -center.z * scale)
     clone.scale.setScalar(scale)
     return clone
   }, [scene])
