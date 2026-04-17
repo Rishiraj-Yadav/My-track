@@ -1,18 +1,11 @@
 import { motion } from 'framer-motion'
+import { useEffect, useRef, useState } from 'react'
 import { ArrowRight, WandSparkles } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Card, CTARow, PageFrame, Pill, Reveal, SectionHeader, StatCard } from '../components'
+import { ModelViewer } from '../components/ModelViewer'
 import { annualLeakage, calculateMonthlyTotals, formatCompactINR, formatINR, futureValueMonthly, healthScore, parseWhatIfCommand, percentage, scoreLabel } from '../lib/finance'
 import { useAppStore } from '../store'
-
-const chartTheme = {
-  teal: '#35f0d2',
-  green: '#7dff6c',
-  blue: '#66b8ff',
-  amber: '#f2c66d',
-  red: '#ff7f8a',
-}
 
 export function LandingPage() {
   const { expenses, goals, sip, profile, whatIf } = useAppStore()
@@ -29,12 +22,16 @@ export function LandingPage() {
   })
   const parsed = parseWhatIfCommand(whatIf, expenses, sip.monthlyAmount)
 
-  const heroSeries = Array.from({ length: 12 }, (_, index) => {
-    const month = `M${index + 1}`
-    const spend = profile.monthlySalary * (0.42 + index * 0.006)
-    const corpus = futureValueMonthly(totals.leakage * 0.55, 12, index + 1)
-    return { month, spend, corpus }
-  })
+  // ── Live wealth-factor: increments with the bleed ticker, normalised 0-1 over 90 s ──
+  const t0 = useRef(Date.now())
+  const [wealthFactor, setWealthFactor] = useState(0)
+  useEffect(() => {
+    const id = setInterval(() => {
+      const elapsed = (Date.now() - t0.current) / 1000
+      setWealthFactor(Math.min(elapsed / 90, 1))
+    }, 500)
+    return () => clearInterval(id)
+  }, [])
 
   return (
     <PageFrame>
@@ -85,56 +82,11 @@ export function LandingPage() {
         </div>
 
         <div className="hero__visual">
-          <motion.div className="floating-card floating-card--large card" animate={{ y: [0, -10, 0] }} transition={{ duration: 6, repeat: Number.POSITIVE_INFINITY, ease: 'easeInOut' }}>
-            <div className="floating-card__label">Avoidable spend</div>
-            <div className="floating-card__value">{formatCompactINR(totals.leakage)}</div>
-            <div className="floating-card__meta">this month</div>
-          </motion.div>
-          <motion.div className="floating-card floating-card--small card" animate={{ y: [0, 12, 0] }} transition={{ duration: 7, repeat: Number.POSITIVE_INFINITY, ease: 'easeInOut' }}>
-            <div className="floating-card__label">10-year future cost</div>
-            <div className="floating-card__value">{formatCompactINR(future10Y)}</div>
-          </motion.div>
-          <motion.div className="floating-card floating-card--score card" animate={{ y: [0, -8, 0] }} transition={{ duration: 5.5, repeat: Number.POSITIVE_INFINITY, ease: 'easeInOut' }}>
-            <div className="floating-card__label">Financial health</div>
-            <div className="score-ring">
-              <div className="score-ring__inner">
-                <span>{health}</span>
-              </div>
-            </div>
-          </motion.div>
-          <motion.div className="floating-card floating-card--mini card" animate={{ x: [0, 6, 0] }} transition={{ duration: 4.6, repeat: Number.POSITIVE_INFINITY, ease: 'easeInOut' }}>
-            <div className="floating-card__label">SIP projection</div>
-            <div className="floating-card__value">
-              {formatCompactINR(futureValueMonthly(sip.monthlyAmount, sip.annualReturn, sip.durationMonths))}
-            </div>
-          </motion.div>
-
-          <Card className="hero-preview">
-            <div className="hero-preview__header">
-              <span>Dashboard preview</span>
-              <Pill tone="positive">Interactive</Pill>
-            </div>
-            <ResponsiveContainer width="100%" height={220}>
-              <AreaChart data={heroSeries}>
-                <defs>
-                  <linearGradient id="heroSpend" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={chartTheme.red} stopOpacity={0.45} />
-                    <stop offset="100%" stopColor={chartTheme.red} stopOpacity={0.02} />
-                  </linearGradient>
-                  <linearGradient id="heroCorpus" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={chartTheme.teal} stopOpacity={0.45} />
-                    <stop offset="100%" stopColor={chartTheme.teal} stopOpacity={0.05} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
-                <XAxis dataKey="month" hide />
-                <YAxis hide />
-                <Tooltip contentStyle={{ background: 'rgba(10, 15, 24, 0.96)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, color: 'white' }} />
-                <Area type="monotone" dataKey="spend" stroke={chartTheme.red} fill="url(#heroSpend)" strokeWidth={2} />
-                <Area type="monotone" dataKey="corpus" stroke={chartTheme.teal} fill="url(#heroCorpus)" strokeWidth={2} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </Card>
+          {/* 3-D model replaces the static hero-preview chart */}
+          <ModelViewer
+            wealthFactor={wealthFactor}
+            className={wealthFactor > 0.5 ? 'model-viewer-wrap--hot' : ''}
+          />
         </div>
       </section>
 
