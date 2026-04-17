@@ -1,63 +1,59 @@
+import { useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { useEffect, useRef } from 'react'
 import { Route, Routes, useLocation } from 'react-router-dom'
 import { AppShell, TopNav } from './components'
-import { useAppStore } from './store'
 import { DashboardPage } from './pages/DashboardPage'
 import { ExpensesPage } from './pages/ExpensesPage'
 import { GoalsPage } from './pages/GoalsPage'
-import { HealthPage } from './pages/HealthPage'
 import { InsightsPage } from './pages/InsightsPage'
 import { LandingPage } from './pages/LandingPage'
 import { OnboardingPage } from './pages/OnboardingPage'
+import { ProfilePage } from './pages/ProfilePage'
 import { ScenariosPage } from './pages/ScenariosPage'
 import { SimulatorPage } from './pages/SimulatorPage'
+import { useAppStore } from './store'
 
 function App() {
   const bootstrap = useAppStore((state) => state.bootstrap)
   const isLoading = useAppStore((state) => state.isLoading)
-  const hasBootstrapped = useRef(false)
+  const error = useAppStore((state) => state.error)
 
   useEffect(() => {
-    if (hasBootstrapped.current) return
-    hasBootstrapped.current = true
     void bootstrap()
   }, [bootstrap])
 
-  return (
-    <AppShell>
-      <BootstrapGate />
-      {isLoading ? null : <AppRoutes />}
-    </AppShell>
-  )
-}
-
-function BootstrapGate() {
-  const { isLoading, error, bootstrap } = useAppStore()
-
-  if (!isLoading && !error) return null
+  if (isLoading) {
+    return (
+      <AppShell>
+        <div className="page-frame" style={{ minHeight: '100vh', display: 'grid', placeItems: 'center' }}>
+          <div className="card" style={{ padding: '2rem 2.5rem', textAlign: 'center' }}>
+            <p className="eyebrow">Loading profile</p>
+            <h2>Fetching your saved data from MongoDB</h2>
+            <p className="section-copy">Hang tight while we restore your profile, expenses, goals, and SIP state.</p>
+          </div>
+        </div>
+      </AppShell>
+    )
+  }
 
   if (error) {
     return (
-      <div className="bootstrap-gate">
-        <div className="bootstrap-gate__card">
-          <p>Backend connection failed</p>
-          <strong>{error}</strong>
-          <button className="button button--primary" onClick={() => void bootstrap()}>
-            Retry
-          </button>
+      <AppShell>
+        <div className="page-frame" style={{ minHeight: '100vh', display: 'grid', placeItems: 'center' }}>
+          <div className="card" style={{ padding: '2rem 2.5rem', maxWidth: '560px' }}>
+            <p className="eyebrow">Startup error</p>
+            <h2>We could not load your saved profile</h2>
+            <p className="section-copy">{error}</p>
+          </div>
         </div>
-      </div>
+      </AppShell>
     )
   }
 
   return (
-    <div className="bootstrap-gate">
-      <div className="bootstrap-gate__card">
-        <p>Connecting to backend...</p>
-        <strong>Loading your finance workspace</strong>
-      </div>
-    </div>
+    <AppShell>
+      <AppRoutes />
+    </AppShell>
   )
 }
 
@@ -83,8 +79,8 @@ function AppRoutes() {
             <Route path="/goals" element={<GoalsPage />} />
             <Route path="/scenarios" element={<ScenariosPage />} />
             <Route path="/insights" element={<InsightsPage />} />
-            <Route path="/health" element={<HealthPage />} />
             <Route path="/onboarding" element={<OnboardingPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
           </Routes>
         </motion.div>
       </AnimatePresence>

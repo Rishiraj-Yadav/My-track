@@ -25,6 +25,7 @@ type AppState = {
   challenge: Challenge
   whatIf: string
   isLoading: boolean
+  hasBootstrapped: boolean
   error: string | null
   bootstrap: () => Promise<void>
   setProfile: (profile: Partial<Profile>) => Promise<void>
@@ -79,6 +80,7 @@ const normalizeBadge = (item: ApiBadge): Badge =>
 export const useAppStore = create<AppState>()((set, get) => ({
   profile: {
     name: '',
+    handle: '',
     pin: '',
     monthlySalary: 0,
     savings: 0,
@@ -91,10 +93,13 @@ export const useAppStore = create<AppState>()((set, get) => ({
   challenge: emptyChallenge,
   whatIf: '',
   isLoading: true,
+  hasBootstrapped: false,
   error: null,
   bootstrap: async () => {
     try {
-      set({ isLoading: true, error: null })
+      const { hasBootstrapped } = get()
+      if (hasBootstrapped) return
+      set({ hasBootstrapped: true, isLoading: true, error: null })
       getSessionId()
       const session = await api.bootstrap()
       setTokens(session.accessToken, session.refreshToken)
@@ -216,4 +221,3 @@ export const useAppStore = create<AppState>()((set, get) => ({
     set({ challenge: response.challenge })
   },
 }))
-

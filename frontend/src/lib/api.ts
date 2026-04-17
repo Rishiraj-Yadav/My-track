@@ -13,6 +13,7 @@ export type BootstrapPayload = {
     email: string | null
     profile: {
       name: string
+      handle: string
       pin: string
       monthlySalary: number
       savings: number
@@ -138,6 +139,8 @@ export const clearTokens = () => {
   localStorage.removeItem(REFRESH_TOKEN_KEY)
 }
 
+export const getRefreshToken = () => localStorage.getItem(REFRESH_TOKEN_KEY) ?? ''
+
 async function request<T>(
   path: string,
   options: RequestInit = {},
@@ -164,6 +167,26 @@ async function request<T>(
   return response.json() as Promise<T>
 }
 
+async function requestWithRefresh<T>(path: string, options: RequestInit = {}) {
+  try {
+    return await request<T>(path, options)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Request failed'
+    const shouldRefresh = message.toLowerCase().includes('jwt expired')
+    if (!shouldRefresh) throw error
+
+    const refreshToken = getRefreshToken()
+    if (!refreshToken) throw error
+
+    const refreshed = await request<BootstrapPayload>('/api/auth/refresh', {
+      method: 'POST',
+      body: JSON.stringify({ refreshToken }),
+    }, '')
+    setTokens(refreshed.accessToken, refreshed.refreshToken)
+    return request<T>(path, options)
+  }
+}
+
 export const api = {
   bootstrap: async (): Promise<ApiResponse<BootstrapPayload>> =>
     request('/api/bootstrap', {
@@ -171,41 +194,41 @@ export const api = {
       body: JSON.stringify({ sessionId: getSessionId() }),
     }, ''),
 
-  getProfile: async () => request<ProfileResponse>('/api/profile'),
+  getProfile: async () => requestWithRefresh<ProfileResponse>('/api/profile'),
   updateProfile: async (body: Record<string, unknown>) =>
-    request<ProfileResponse>('/api/profile', { method: 'PUT', body: JSON.stringify(body) }),
-  getSip: async () => request<SipResponse>('/api/profile/sip'),
+    requestWithRefresh<ProfileResponse>('/api/profile', { method: 'PUT', body: JSON.stringify(body) }),
+  getSip: async () => requestWithRefresh<SipResponse>('/api/profile/sip'),
   updateSip: async (body: Record<string, unknown>) =>
-    request<SipResponse>('/api/profile/sip', { method: 'PUT', body: JSON.stringify(body) }),
-  getWhatIf: async () => request<WhatIfResponse>('/api/profile/what-if'),
+    requestWithRefresh<SipResponse>('/api/profile/sip', { method: 'PUT', body: JSON.stringify(body) }),
+  getWhatIf: async () => requestWithRefresh<WhatIfResponse>('/api/profile/what-if'),
   updateWhatIf: async (whatIf: string) =>
-    request<WhatIfResponse>('/api/profile/what-if', { method: 'PUT', body: JSON.stringify({ whatIf }) }),
-  getChallenge: async () => request<ChallengeResponse>('/api/profile/challenge'),
+    requestWithRefresh<WhatIfResponse>('/api/profile/what-if', { method: 'PUT', body: JSON.stringify({ whatIf }) }),
+  getChallenge: async () => requestWithRefresh<ChallengeResponse>('/api/profile/challenge'),
   updateChallenge: async (body: Record<string, unknown>) =>
-    request<ChallengeResponse>('/api/profile/challenge', { method: 'PUT', body: JSON.stringify(body) }),
-  getBadges: async () => request<BadgeResponse>('/api/profile/badges'),
+    requestWithRefresh<ChallengeResponse>('/api/profile/challenge', { method: 'PUT', body: JSON.stringify(body) }),
+  getBadges: async () => requestWithRefresh<BadgeResponse>('/api/profile/badges'),
   updateBadge: async (body: { id: string; unlocked: boolean }) =>
-    request<BadgeResponse>('/api/profile/badges', { method: 'PUT', body: JSON.stringify(body) }),
-  listExpenses: async () => request<ExpensesResponse>('/api/expenses'),
+    requestWithRefresh<BadgeResponse>('/api/profile/badges', { method: 'PUT', body: JSON.stringify(body) }),
+  listExpenses: async () => requestWithRefresh<ExpensesResponse>('/api/expenses'),
   createExpense: async (body: Record<string, unknown>) =>
-    request<ExpenseResponse>('/api/expenses', { method: 'POST', body: JSON.stringify(body) }),
+    requestWithRefresh<ExpenseResponse>('/api/expenses', { method: 'POST', body: JSON.stringify(body) }),
   updateExpense: async (id: string, body: Record<string, unknown>) =>
-    request<ExpenseResponse>(`/api/expenses/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+    requestWithRefresh<ExpenseResponse>(`/api/expenses/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
   deleteExpense: async (id: string) =>
-    request(`/api/expenses/${id}`, { method: 'DELETE' }),
-  listGoals: async () => request<GoalsResponse>('/api/goals'),
+    requestWithRefresh(`/api/expenses/${id}`, { method: 'DELETE' }),
+  listGoals: async () => requestWithRefresh<GoalsResponse>('/api/goals'),
   createGoal: async (body: Record<string, unknown>) =>
-    request<GoalResponse>('/api/goals', { method: 'POST', body: JSON.stringify(body) }),
+    requestWithRefresh<GoalResponse>('/api/goals', { method: 'POST', body: JSON.stringify(body) }),
   updateGoal: async (id: string, body: Record<string, unknown>) =>
-    request<GoalResponse>(`/api/goals/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+    requestWithRefresh<GoalResponse>(`/api/goals/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
   deleteGoal: async (id: string) =>
-    request(`/api/goals/${id}`, { method: 'DELETE' }),
-  listScenarios: async () => request<ScenariosResponse>('/api/scenarios'),
+    requestWithRefresh(`/api/goals/${id}`, { method: 'DELETE' }),
+  listScenarios: async () => requestWithRefresh<ScenariosResponse>('/api/scenarios'),
   createScenario: async (body: Record<string, unknown>) =>
-    request<ScenarioResponse>('/api/scenarios', { method: 'POST', body: JSON.stringify(body) }),
+    requestWithRefresh<ScenarioResponse>('/api/scenarios', { method: 'POST', body: JSON.stringify(body) }),
   updateScenario: async (id: string, body: Record<string, unknown>) =>
-    request<ScenarioResponse>(`/api/scenarios/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+    requestWithRefresh<ScenarioResponse>(`/api/scenarios/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
   deleteScenario: async (id: string) =>
-    request(`/api/scenarios/${id}`, { method: 'DELETE' }),
-  getDashboardSummary: async () => request<DashboardSummaryResponse>('/api/dashboard/summary'),
+    requestWithRefresh(`/api/scenarios/${id}`, { method: 'DELETE' }),
+  getDashboardSummary: async () => requestWithRefresh<DashboardSummaryResponse>('/api/dashboard/summary'),
 }

@@ -34,7 +34,6 @@ export function TopNav() {
     ['Goals', '/goals'],
     ['Scenarios', '/scenarios'],
     ['Insights', '/insights'],
-    ['Health', '/health'],
   ] as const
 
   return (
@@ -57,11 +56,8 @@ export function TopNav() {
         ))}
       </nav>
       <div className="topnav__actions">
-        <Link to="/dashboard" className="button button--ghost">
-          Open Workspace
-        </Link>
-        <Link to="/onboarding" className="button button--primary">
-          Start Saving
+        <Link to="/profile" className="button button--primary">
+          Profile
           <ArrowRight size={16} />
         </Link>
       </div>

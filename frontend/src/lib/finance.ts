@@ -21,6 +21,7 @@ export type Goal = {
 
 export type Profile = {
   name: string
+  handle: string
   pin: string
   monthlySalary: number
   savings: number
@@ -264,3 +265,396 @@ export const monthlySavingsRequired = (targetAmount: number, targetDate: string,
 export const percentage = (part: number, total: number) =>
   total > 0 ? Math.max(0, Math.min(100, (part / total) * 100)) : 0
 
+// Category grouping for horizontal bar chart
+const categoryKeywords: [string, string[]][] = [
+  ['Food & Delivery', ['swiggy', 'zomato', 'food', 'dinner', 'lunch', 'breakfast', 'cafe', 'coffee']],
+  ['Subscriptions', ['netflix', 'ott', 'spotify', 'prime', 'hotstar', 'youtube', 'subscription']],
+  ['Transport', ['metro', 'uber', 'ola', 'commute', 'fuel', 'petrol', 'bus', 'train']],
+  ['Digital & Cloud', ['cloud', 'storage', 'icloud', 'google', 'drive', 'hosting', 'domain']],
+  ['Fitness & Health', ['gym', 'fitness', 'health', 'yoga', 'supplement']],
+  ['Shopping', ['amazon', 'flipkart', 'shopping', 'clothes', 'gadget']],
+]
+
+export type CategoryBreakdown = {
+  category: string
+  amount: number
+  percentage: number
+  tag: ExpenseTag
+}
+
+export const groupExpensesByCategory = (expenses: Expense[]): CategoryBreakdown[] => {
+  const active = expenses.filter((e) => !e.archived)
+  const groups: Record<string, { amount: number; tag: ExpenseTag }> = {}
+
+  for (const expense of active) {
+    const monthly = monthlyEquivalent(expense.amount, expense.frequency)
+    const lowerName = expense.name.toLowerCase()
+    let matched = false
+    for (const [category, keywords] of categoryKeywords) {
+      if (keywords.some((kw) => lowerName.includes(kw))) {
+        if (!groups[category]) groups[category] = { amount: 0, tag: expense.tag }
+        groups[category].amount += monthly
+        matched = true
+        break
+      }
+    }
+    if (!matched) {
+      const cat = 'Other'
+      if (!groups[cat]) groups[cat] = { amount: 0, tag: expense.tag }
+      groups[cat].amount += monthly
+    }
+  }
+
+  const total = Object.values(groups).reduce((s, g) => s + g.amount, 0)
+  return Object.entries(groups)
+    .map(([category, data]) => ({
+      category,
+      amount: Math.round(data.amount),
+      percentage: total > 0 ? Math.round((data.amount / total) * 100) : 0,
+      tag: data.tag,
+    }))
+    .sort((a, b) => b.amount - a.amount)
+}
+
+// Generate realistic 6-month trend data from current state
+export type MonthlyTrendPoint = {
+  month: string
+  income: number
+  spend: number
+  savings: number
+  leakage: number
+}
+
+export const generateMonthlyTrend = (
+  salary: number,
+  totalSpend: number,
+  leakage: number,
+): MonthlyTrendPoint[] => {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
+  const now = new Date()
+  const currentMonthIndex = now.getMonth()
+
+  return months.map((_, i) => {
+    const monthIdx = (currentMonthIndex - 5 + i + 12) % 12
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    const variance = 1 + Math.sin(i * 1.2) * 0.08 + (i - 3) * 0.015
+    const spendVariance = 1 + Math.cos(i * 0.9) * 0.12 - i * 0.02
+    const currentSpend = totalSpend * spendVariance
+    const currentLeakage = leakage * (spendVariance + 0.04)
+    return {
+      month: monthNames[monthIdx],
+      income: Math.round(salary * variance),
+      spend: Math.round(currentSpend),
+      savings: Math.round(salary * variance - currentSpend),
+      leakage: Math.round(currentLeakage),
+    }
+  })
+}
+
+// SIP growth series for stacked area chart (principal vs returns)
+export type SipGrowthPoint = {
+  year: string
+  principal: number
+  returns: number
+  total: number
+}
+
+export const buildSipGrowthSeries = (
+  monthlyAmount: number,
+  annualReturn: number,
+  durationMonths: number,
+): SipGrowthPoint[] => {
+  const years = Math.ceil(durationMonths / 12)
+  return Array.from({ length: years }, (_, i) => {
+    const months = (i + 1) * 12
+    const principal = monthlyAmount * months
+    const total = futureValueMonthly(monthlyAmount, annualReturn, months)
+    return {
+      year: `${i + 1}Y`,
+      principal: Math.round(principal),
+      returns: Math.round(total - principal),
+      total: Math.round(total),
+    }
+  })
+}
+
+// What-if impact calculator — returns deltas for dashboard panels
+export type WhatIfImpact = {
+  label: string
+  monthlySavingsChange: number
+  healthScoreBefore: number
+  healthScoreAfter: number
+  corpusBefore: number
+  corpusAfter: number
+  sipImpact: number
+}
+
+export const calculateWhatIfImpact = (
+  command: string,
+  expenses: Expense[],
+  sip: { monthlyAmount: number; annualReturn: number; durationMonths: number },
+  profile: { monthlySalary: number },
+  goals: { savedAmount: number; targetAmount: number }[],
+): WhatIfImpact => {
+  const parsed = parseWhatIfCommand(command, expenses, sip.monthlyAmount)
+  const totals = calculateMonthlyTotals(expenses)
+  const subsCount = expenses.filter((e) => e.name.toLowerCase().includes('ott')).length
+  const goalsOnTrack = goals.some((g) => g.savedAmount >= g.targetAmount * 0.35)
+
+  const scoreBefore = healthScore({
+    salary: profile.monthlySalary,
+    leakage: totals.leakage,
+    sipAmount: sip.monthlyAmount,
+    goalsOnTrack,
+    streak: 12,
+    subscriptions: subsCount,
+  })
+
+  const newLeakage = Math.max(0, totals.leakage - parsed.monthlyImpact)
+  const scoreAfter = healthScore({
+    salary: profile.monthlySalary,
+    leakage: newLeakage,
+    sipAmount: parsed.sipImpact,
+    goalsOnTrack,
+    streak: 12,
+    subscriptions: subsCount,
+  })
+
+  const corpusBefore = futureValueMonthly(sip.monthlyAmount, sip.annualReturn, sip.durationMonths)
+  const corpusAfter = futureValueMonthly(parsed.sipImpact, sip.annualReturn, sip.durationMonths)
+
+  return {
+    label: parsed.label,
+    monthlySavingsChange: parsed.monthlyImpact,
+    healthScoreBefore: scoreBefore,
+    healthScoreAfter: scoreAfter,
+    corpusBefore,
+    corpusAfter,
+    sipImpact: parsed.sipImpact,
+  }
+}
+
+export type SimPlan = {
+  monthlyAmount: number
+  annualReturn: number
+  durationMonths: number
+  delayMonths: number
+  inflationRate?: number
+  stepUpRate?: number
+  initialCorpus?: number
+}
+
+export type TimelineEvent = {
+  id?: string
+  month?: number
+  atMonth?: number
+  amount?: number
+  type?: string
+  rate?: number
+  durationMonths?: number
+  label?: string
+}
+
+export type MonthPoint = {
+  month: number
+  corpus: number
+  principal: number
+  realCorpus: number
+  interest: number
+}
+
+export type MonteCarloBand = {
+  p10: number
+  p50: number
+  p90: number
+}
+
+export type ParsedVerb = 'stop' | 'add' | 'cut' | 'delay' | 'unknown' | 'step_up' | 'pause' | 'lump_sum' | 'withdraw' | 'redirect'
+
+export type ParsedOp = {
+  verb: ParsedVerb
+  target?: string
+  amount?: number
+  originalText?: string
+  confidence?: number
+  durationMonths?: number
+  atMonth?: number
+  delayMonths?: number
+  stepUpRate?: number
+  eventAmount?: number
+  inheritedVerb?: ParsedVerb | null
+  label?: string
+}
+
+export type MultiOpResult = {
+  ops: ParsedOp[]
+  newEvents?: TimelineEvent[]
+  planUpdates?: Partial<SimPlan>
+  message: string
+  primaryVerb?: ParsedVerb | null
+  isAmbiguous?: boolean
+  alternatives?: string[]
+}
+
+export const projectTimeline = (plan: SimPlan): MonthPoint[] => {
+  const points: MonthPoint[] = []
+  let corpus = plan.initialCorpus || 0
+  let principal = plan.initialCorpus || 0
+  let currentSip = plan.monthlyAmount
+  const currentDelay = plan.delayMonths || 0
+
+  const monthlyRate = plan.annualReturn / 12 / 100
+  const inflationRate = (plan.inflationRate ?? 6) / 12 / 100
+
+  for (let m = 1; m <= plan.durationMonths; m++) {
+    const isInvesting = m > currentDelay
+
+    if (isInvesting) {
+      principal += currentSip
+      corpus += currentSip
+    }
+
+    corpus = corpus * (1 + monthlyRate)
+
+    if (isInvesting && m % 12 === 0 && plan.stepUpRate) {
+      currentSip = currentSip * (1 + plan.stepUpRate / 100)
+    }
+
+    const realCorpus = corpus / Math.pow(1 + inflationRate, m)
+
+    points.push({ month: m, corpus, principal, realCorpus, interest: corpus - principal })
+  }
+
+  return points
+}
+
+export const projectWithEvents = (plan: SimPlan, events: TimelineEvent[]): MonthPoint[] => {
+  const points: MonthPoint[] = []
+  let corpus = plan.initialCorpus || 0
+  let principal = plan.initialCorpus || 0
+  let currentSip = plan.monthlyAmount
+  const currentDelay = plan.delayMonths || 0
+
+  const monthlyRate = plan.annualReturn / 12 / 100
+  const inflationRate = (plan.inflationRate ?? 6) / 12 / 100
+
+  for (let m = 1; m <= plan.durationMonths; m++) {
+    const isInvesting = m > currentDelay
+
+    if (isInvesting) {
+      principal += currentSip
+      corpus += currentSip
+    }
+
+    const monthEvents = events.filter(e => (e.month ?? e.atMonth) === m)
+    for (const e of monthEvents) {
+      const eAmt = e.amount || 0;
+      corpus += eAmt
+      if (eAmt > 0) principal += eAmt
+    }
+
+    corpus = corpus * (1 + monthlyRate)
+
+    if (isInvesting && m % 12 === 0 && plan.stepUpRate) {
+      currentSip = currentSip * (1 + plan.stepUpRate / 100)
+    }
+
+    const realCorpus = corpus / Math.pow(1 + inflationRate, m)
+
+    points.push({ month: m, corpus, principal, realCorpus, interest: corpus - principal })
+  }
+
+  return points
+}
+
+export const monteCarlo = (plan: SimPlan, options: { runs: number }, events: TimelineEvent[] = []): MonteCarloBand[] => {
+  const results: number[][] = Array.from({ length: plan.durationMonths }, () => [])
+  const meanAnnual = plan.annualReturn / 100
+  const volatility = 0.15 
+
+  for (let r = 0; r < options.runs; r++) {
+    let corpus = plan.initialCorpus || 0
+    let currentSip = plan.monthlyAmount
+    const currentDelay = plan.delayMonths || 0
+
+    for (let m = 1; m <= plan.durationMonths; m++) {
+      const isInvesting = m > currentDelay
+
+      if (isInvesting) corpus += currentSip
+
+      const monthEvents = events.filter(e => (e.month ?? e.atMonth) === m)
+      for (const e of monthEvents) corpus += (e.amount || 0)
+
+      const u1 = Math.max(Math.random(), Number.EPSILON)
+      const u2 = Math.random()
+      const z0 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2)
+      
+      const monthlyReturn = (meanAnnual / 12) + (volatility / Math.sqrt(12)) * z0
+      corpus = corpus * (1 + monthlyReturn)
+
+      if (isInvesting && m % 12 === 0 && plan.stepUpRate) currentSip = currentSip * (1 + plan.stepUpRate / 100)
+
+      results[m - 1].push(corpus)
+    }
+  }
+
+  return results.map(monthResults => {
+    monthResults.sort((a, b) => a - b)
+    return {
+      p10: monthResults[Math.floor(monthResults.length * 0.1)] || 0,
+      p50: monthResults[Math.floor(monthResults.length * 0.5)] || 0,
+      p90: monthResults[Math.floor(monthResults.length * 0.9)] || 0,
+    }
+  })
+}
+
+export const goalETA = (
+  goal: Goal,
+  plan: SimPlan
+): {
+  onTrack: boolean;
+  monthsToReach: number | null;
+  requiredMonthlySIP: number;
+  shortfall: number;
+} => {
+  const targetDate = new Date(goal.targetDate);
+  const now = new Date();
+  const monthsRemaining = Math.max(1, (targetDate.getFullYear() - now.getFullYear()) * 12 + targetDate.getMonth() - now.getMonth());
+
+  const timeline = projectTimeline(plan);
+  const targetAmount = goal.targetAmount;
+  const found = timeline.find(p => p.corpus >= targetAmount);
+  const monthsToReach = found ? found.month : null;
+
+  const rate = plan.annualReturn / 12 / 100;
+  const fv = targetAmount;
+  let requiredMonthlySIP = fv * rate / (Math.pow(1 + rate, monthsRemaining) - 1);
+  if (rate === 0) requiredMonthlySIP = fv / monthsRemaining;
+
+  const onTrack = monthsToReach !== null && monthsToReach <= monthsRemaining;
+  const shortfall = Math.max(0, requiredMonthlySIP - plan.monthlyAmount);
+
+  return {
+    onTrack,
+    monthsToReach,
+    requiredMonthlySIP,
+    shortfall,
+  };
+}
+
+export const parseMultiOp = (command: string, expenses: Expense[], sipAmount: number, ctx?: any): MultiOpResult => {
+  return {
+    ops: [{ verb: 'unknown', originalText: command, confidence: 0 }],
+    message: 'Parsed command placeholder.',
+    primaryVerb: 'unknown',
+  }
+}
+
+export const buildCommandSuggestions = (expenses: Expense[]): string[] => {
+  return [
+    'Add ₹5000 to monthly SIP',
+    'Increase SIP by 10%',
+    'Delay SIPs by 3 months',
+    ...(expenses || []).slice(0, 2).map(e => `Stop ${e.name}`),
+  ]
+}
