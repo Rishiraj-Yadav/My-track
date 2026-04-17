@@ -264,3 +264,172 @@ export const monthlySavingsRequired = (targetAmount: number, targetDate: string,
 export const percentage = (part: number, total: number) =>
   total > 0 ? Math.max(0, Math.min(100, (part / total) * 100)) : 0
 
+// Category grouping for horizontal bar chart
+const categoryKeywords: [string, string[]][] = [
+  ['Food & Delivery', ['swiggy', 'zomato', 'food', 'dinner', 'lunch', 'breakfast', 'cafe', 'coffee']],
+  ['Subscriptions', ['netflix', 'ott', 'spotify', 'prime', 'hotstar', 'youtube', 'subscription']],
+  ['Transport', ['metro', 'uber', 'ola', 'commute', 'fuel', 'petrol', 'bus', 'train']],
+  ['Digital & Cloud', ['cloud', 'storage', 'icloud', 'google', 'drive', 'hosting', 'domain']],
+  ['Fitness & Health', ['gym', 'fitness', 'health', 'yoga', 'supplement']],
+  ['Shopping', ['amazon', 'flipkart', 'shopping', 'clothes', 'gadget']],
+]
+
+export type CategoryBreakdown = {
+  category: string
+  amount: number
+  percentage: number
+  tag: ExpenseTag
+}
+
+export const groupExpensesByCategory = (expenses: Expense[]): CategoryBreakdown[] => {
+  const active = expenses.filter((e) => !e.archived)
+  const groups: Record<string, { amount: number; tag: ExpenseTag }> = {}
+
+  for (const expense of active) {
+    const monthly = monthlyEquivalent(expense.amount, expense.frequency)
+    const lowerName = expense.name.toLowerCase()
+    let matched = false
+    for (const [category, keywords] of categoryKeywords) {
+      if (keywords.some((kw) => lowerName.includes(kw))) {
+        if (!groups[category]) groups[category] = { amount: 0, tag: expense.tag }
+        groups[category].amount += monthly
+        matched = true
+        break
+      }
+    }
+    if (!matched) {
+      const cat = 'Other'
+      if (!groups[cat]) groups[cat] = { amount: 0, tag: expense.tag }
+      groups[cat].amount += monthly
+    }
+  }
+
+  const total = Object.values(groups).reduce((s, g) => s + g.amount, 0)
+  return Object.entries(groups)
+    .map(([category, data]) => ({
+      category,
+      amount: Math.round(data.amount),
+      percentage: total > 0 ? Math.round((data.amount / total) * 100) : 0,
+      tag: data.tag,
+    }))
+    .sort((a, b) => b.amount - a.amount)
+}
+
+// Generate realistic 6-month trend data from current state
+export type MonthlyTrendPoint = {
+  month: string
+  income: number
+  spend: number
+  savings: number
+  leakage: number
+}
+
+export const generateMonthlyTrend = (
+  salary: number,
+  totalSpend: number,
+  leakage: number,
+): MonthlyTrendPoint[] => {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
+  const now = new Date()
+  const currentMonthIndex = now.getMonth()
+
+  return months.map((_, i) => {
+    const monthIdx = (currentMonthIndex - 5 + i + 12) % 12
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    const variance = 1 + Math.sin(i * 1.2) * 0.08 + (i - 3) * 0.015
+    const spendVariance = 1 + Math.cos(i * 0.9) * 0.12 - i * 0.02
+    const currentSpend = totalSpend * spendVariance
+    const currentLeakage = leakage * (spendVariance + 0.04)
+    return {
+      month: monthNames[monthIdx],
+      income: Math.round(salary * variance),
+      spend: Math.round(currentSpend),
+      savings: Math.round(salary * variance - currentSpend),
+      leakage: Math.round(currentLeakage),
+    }
+  })
+}
+
+// SIP growth series for stacked area chart (principal vs returns)
+export type SipGrowthPoint = {
+  year: string
+  principal: number
+  returns: number
+  total: number
+}
+
+export const buildSipGrowthSeries = (
+  monthlyAmount: number,
+  annualReturn: number,
+  durationMonths: number,
+): SipGrowthPoint[] => {
+  const years = Math.ceil(durationMonths / 12)
+  return Array.from({ length: years }, (_, i) => {
+    const months = (i + 1) * 12
+    const principal = monthlyAmount * months
+    const total = futureValueMonthly(monthlyAmount, annualReturn, months)
+    return {
+      year: `${i + 1}Y`,
+      principal: Math.round(principal),
+      returns: Math.round(total - principal),
+      total: Math.round(total),
+    }
+  })
+}
+
+// What-if impact calculator — returns deltas for dashboard panels
+export type WhatIfImpact = {
+  label: string
+  monthlySavingsChange: number
+  healthScoreBefore: number
+  healthScoreAfter: number
+  corpusBefore: number
+  corpusAfter: number
+  sipImpact: number
+}
+
+export const calculateWhatIfImpact = (
+  command: string,
+  expenses: Expense[],
+  sip: { monthlyAmount: number; annualReturn: number; durationMonths: number },
+  profile: { monthlySalary: number },
+  goals: { savedAmount: number; targetAmount: number }[],
+): WhatIfImpact => {
+  const parsed = parseWhatIfCommand(command, expenses, sip.monthlyAmount)
+  const totals = calculateMonthlyTotals(expenses)
+  const subsCount = expenses.filter((e) => e.name.toLowerCase().includes('ott')).length
+  const goalsOnTrack = goals.some((g) => g.savedAmount >= g.targetAmount * 0.35)
+
+  const scoreBefore = healthScore({
+    salary: profile.monthlySalary,
+    leakage: totals.leakage,
+    sipAmount: sip.monthlyAmount,
+    goalsOnTrack,
+    streak: 12,
+    subscriptions: subsCount,
+  })
+
+  const newLeakage = Math.max(0, totals.leakage - parsed.monthlyImpact)
+  const scoreAfter = healthScore({
+    salary: profile.monthlySalary,
+    leakage: newLeakage,
+    sipAmount: parsed.sipImpact,
+    goalsOnTrack,
+    streak: 12,
+    subscriptions: subsCount,
+  })
+
+  const corpusBefore = futureValueMonthly(sip.monthlyAmount, sip.annualReturn, sip.durationMonths)
+  const corpusAfter = futureValueMonthly(parsed.sipImpact, sip.annualReturn, sip.durationMonths)
+
+  return {
+    label: parsed.label,
+    monthlySavingsChange: parsed.monthlyImpact,
+    healthScoreBefore: scoreBefore,
+    healthScoreAfter: scoreAfter,
+    corpusBefore,
+    corpusAfter,
+    sipImpact: parsed.sipImpact,
+  }
+}
+

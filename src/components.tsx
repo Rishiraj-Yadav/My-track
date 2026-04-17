@@ -34,7 +34,6 @@ export function TopNav() {
     ['Goals', '/goals'],
     ['Scenarios', '/scenarios'],
     ['Insights', '/insights'],
-    ['Health', '/health'],
   ] as const
 
   return (

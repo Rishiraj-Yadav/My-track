@@ -4,7 +4,6 @@ import { AppShell, TopNav } from './components'
 import { DashboardPage } from './pages/DashboardPage'
 import { ExpensesPage } from './pages/ExpensesPage'
 import { GoalsPage } from './pages/GoalsPage'
-import { HealthPage } from './pages/HealthPage'
 import { InsightsPage } from './pages/InsightsPage'
 import { LandingPage } from './pages/LandingPage'
 import { OnboardingPage } from './pages/OnboardingPage'
@@ -41,7 +40,6 @@ function AppRoutes() {
             <Route path="/goals" element={<GoalsPage />} />
             <Route path="/scenarios" element={<ScenariosPage />} />
             <Route path="/insights" element={<InsightsPage />} />
-            <Route path="/health" element={<HealthPage />} />
             <Route path="/onboarding" element={<OnboardingPage />} />
           </Routes>
         </motion.div>
