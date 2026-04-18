@@ -1,4 +1,4 @@
-﻿import { useMemo } from 'react'
+import { useMemo } from 'react'
 import {
   Area,
   AreaChart,
@@ -38,13 +38,12 @@ export function DelayCostWidget() {
   )
 
   const chartData = useMemo(() => {
-    const end = Math.max(1, Math.floor(activeMonth))
-    return nowTimeline.slice(0, end).map((point, index) => ({
+    return nowTimeline.map((point, index) => ({
       month: point.month,
       startNow: point.corpus,
       startLater: laterTimeline[index]?.corpus ?? 0,
     }))
-  }, [nowTimeline, laterTimeline, activeMonth])
+  }, [nowTimeline, laterTimeline])
 
   const nowEnd = nowTimeline.at(-1)?.corpus ?? 0
   const laterEnd = laterTimeline.at(-1)?.corpus ?? 0

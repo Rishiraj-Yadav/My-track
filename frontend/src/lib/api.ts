@@ -218,6 +218,8 @@ export const api = {
       body: JSON.stringify({ sessionId: getSessionId() }),
     }, ''),
 
+  getMe: async () => requestWithRefresh<{ user: BootstrapPayload['user'] }>('/api/auth/me'),
+
   getProfile: async () => requestWithRefresh<ProfileResponse>('/api/profile'),
   updateProfile: async (body: Record<string, unknown>) =>
     requestWithRefresh<ProfileResponse>('/api/profile', { method: 'PUT', body: JSON.stringify(body) }),
@@ -259,5 +261,39 @@ export const api = {
     requestWithRefresh<SimulatorNlpParseResponse>('/api/simulator/nlp/parse', {
       method: 'POST',
       body: JSON.stringify({ command }),
+    }),
+
+  // Auth
+  login: async (email: string, password: string) =>
+    request<BootstrapPayload>('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    }, ''),
+
+  register: async (email: string, password: string, name: string) =>
+    request<BootstrapPayload>('/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ email, password, name }),
+    }, ''),
+
+  // Tier
+  getTier: async () => requestWithRefresh<{ tier: string }>('/api/profile/tier'),
+  updateTier: async (tier: string) =>
+    requestWithRefresh<{ tier: string }>('/api/profile/tier', {
+      method: 'PUT',
+      body: JSON.stringify({ tier }),
+    }),
+
+  // Payments
+  createPaymentOrder: async (tierName: string, amount: number) =>
+    requestWithRefresh<{ success: boolean; order: { id: string; amount: number; currency: string } }>('/api/payments/create-order', {
+      method: 'POST',
+      body: JSON.stringify({ tierName, amount }),
+    }),
+
+  verifyPayment: async (payload: { razorpay_payment_id?: string; razorpay_order_id?: string; razorpay_signature?: string; status?: string; newTier: string }) =>
+    requestWithRefresh<{ success: boolean }>('/api/payments/verify', {
+      method: 'POST',
+      body: JSON.stringify(payload),
     }),
 }

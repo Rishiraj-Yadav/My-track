@@ -1,9 +1,10 @@
-﻿import { useMemo } from 'react'
+import { useMemo } from 'react'
 import {
   Area,
   AreaChart,
   CartesianGrid,
   Legend,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -23,16 +24,15 @@ export function CompoundingVisualizer() {
   const { timeline, activeMonth, plan } = useSimulator()
 
   const chartData = useMemo(() => {
-    const end = Math.max(1, Math.floor(activeMonth))
-    return timeline.slice(0, end).map((point) => ({
+    return timeline.map((point) => ({
       month: point.month,
       principal: point.principal,
       interest: point.interest,
     }))
-  }, [timeline, activeMonth])
+  }, [timeline])
 
-  const last = timeline.at(-1)
-  const maxY = (last?.corpus ?? 1) * 1.05
+  const last = timeline[Math.max(0, Math.floor(activeMonth) - 1)]
+  const maxY = (timeline.at(-1)?.corpus ?? 1) * 1.05
   const interestPct =
     last && last.corpus > 0 ? Math.round((last.interest / last.corpus) * 100) : 0
 
@@ -130,6 +130,14 @@ export function CompoundingVisualizer() {
             fill="url(#cv-interest)"
             dot={false}
           />
+          {Math.floor(activeMonth) > 0 && Math.floor(activeMonth) <= plan.durationMonths ? (
+            <ReferenceLine
+              x={Math.floor(activeMonth)}
+              stroke="rgba(255,255,255,0.6)"
+              strokeDasharray="4 3"
+              strokeWidth={2}
+            />
+          ) : null}
         </AreaChart>
       </ResponsiveContainer>
     </Card>

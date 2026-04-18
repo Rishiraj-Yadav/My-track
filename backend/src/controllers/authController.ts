@@ -23,6 +23,7 @@ const userDto = (user: any) => ({
   challenge: user.challenge,
   whatIf: user.whatIf,
   badges: user.badges,
+  tier: user.tier || 'starter',
 })
 
 export const register = asyncHandler(async (req, res) => {

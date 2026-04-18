@@ -1,4 +1,4 @@
-﻿import { useMemo } from 'react'
+import { useMemo } from 'react'
 import {
   Area,
   AreaChart,
@@ -25,10 +25,9 @@ export function WhatIfPlayground() {
     useSimulator()
 
   const chartData = useMemo(() => {
-    const end = Math.max(1, Math.floor(activeMonth))
     const monthlyInflation = (plan.inflationRate ?? 6) / 12 / 100
 
-    return timeline.slice(0, end).map((point, index) => {
+    return timeline.map((point, index) => {
       const band = showMC ? mcBands[index] : undefined
       const adjustMonteCarlo = (value: number) =>
         showReal ? value / (1 + monthlyInflation) ** point.month : value
@@ -281,12 +280,13 @@ export function WhatIfPlayground() {
               name="p50"
             />
           ) : null}
-          {refMonth > 0 && refMonth < plan.durationMonths ? (
+          {refMonth > 0 && refMonth <= plan.durationMonths ? (
             <ReferenceLine
               x={refMonth}
-              stroke="rgba(255,255,255,0.3)"
+              stroke="rgba(255,255,255,0.6)"
               strokeDasharray="4 3"
-              label={{ value: `M${refMonth}`, fill: 'rgba(255,255,255,0.5)', fontSize: 10 }}
+              strokeWidth={2}
+              label={{ value: `Playback: M${refMonth}`, fill: 'rgba(255,255,255,0.9)', fontSize: 13, position: 'top' }}
             />
           ) : null}
         </AreaChart>

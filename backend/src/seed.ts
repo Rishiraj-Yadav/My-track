@@ -15,6 +15,7 @@
  * Run:  npx tsx src/seed.ts
  */
 
+import bcrypt from 'bcryptjs'
 import mongoose from 'mongoose'
 import { User } from './models/User.js'
 import { Expense } from './models/Expense.js'
@@ -35,15 +36,28 @@ async function seed() {
     await Goal.deleteMany({ userId: existing._id })
     await Scenario.deleteMany({ userId: existing._id })
     await User.deleteOne({ _id: existing._id })
-    console.log('🗑️  Cleared previous seed data')
+    console.log('🗑️  Cleared previous Arjun seed data')
+  }
+  // Also clear Sneha
+  const existingSneha = await User.findOne({ email: 'sneha.patel@gmail.com' })
+  if (existingSneha) {
+    await Expense.deleteMany({ userId: existingSneha._id })
+    await Goal.deleteMany({ userId: existingSneha._id })
+    await Scenario.deleteMany({ userId: existingSneha._id })
+    await User.deleteOne({ _id: existingSneha._id })
+    console.log('🗑️  Cleared previous Sneha seed data')
   }
 
   // ══════════════════════════════════════════════════════════════
   //  1. USER — Arjun Mehta, 27, SDE-1, Bangalore
   // ══════════════════════════════════════════════════════════════
+  const arjunPasswordHash = await bcrypt.hash('arjun123', 10)
   const user = await User.create({
     clientSessionId: SEED_SESSION_ID,
-    isAnonymous: true,
+    email: 'arjun.mehta@gmail.com',
+    passwordHash: arjunPasswordHash,
+    isAnonymous: false,
+    tier: 'strategist',            // ← Premium user (upgraded)
     profile: {
       name: 'Arjun Mehta',
       handle: 'arjun-mehta',
@@ -223,23 +237,77 @@ async function seed() {
 
   console.log(`🔮 Created ${scenarios.length} scenarios`)
 
+  // ══════════════════════════════════════════════════════════════
+  //  USER 2 — Sneha Patel, 24, Content Writer, Mumbai (FREE TIER)
+  // ══════════════════════════════════════════════════════════════
+  const snehaPasswordHash = await bcrypt.hash('sneha123', 10)
+  const sneha = await User.create({
+    email: 'sneha.patel@gmail.com',
+    passwordHash: snehaPasswordHash,
+    isAnonymous: false,
+    tier: 'starter',               // ← Free user (no upgrade)
+    profile: {
+      name: 'Sneha Patel',
+      handle: 'sneha-patel',
+      pin: '1234',
+      monthlySalary: 35000,       // ₹35K — freelance content writer
+      savings: 42000,             // ₹42K
+    },
+    sip: {
+      monthlyAmount: 2000,
+      annualReturn: 12,
+      durationMonths: 120,
+      delayMonths: 0,
+    },
+    challenge: {
+      name: 'Pack lunch week',
+      daysLeft: 5,
+      saved: 400,
+    },
+    whatIf: '',
+    badges: [
+      { id: 'b1', name: 'Leak Finder', unlocked: true, hint: 'Tagged 3 expenses correctly' },
+      { id: 'b2', name: 'SIP Starter', unlocked: true, hint: 'Started a monthly SIP' },
+      { id: 'b3', name: 'No-Spend Week', unlocked: false, hint: '7 days under avoidable-spend target' },
+    ],
+    refreshTokenHash: '',
+  })
+
+  // Sneha's basic expenses
+  await Expense.insertMany([
+    { userId: sneha._id, name: 'Rent (Andheri shared flat)', amount: 12000, frequency: 'monthly', tag: 'essential' },
+    { userId: sneha._id, name: 'Groceries', amount: 3500, frequency: 'monthly', tag: 'essential' },
+    { userId: sneha._id, name: 'Metro pass', amount: 1200, frequency: 'monthly', tag: 'essential' },
+    { userId: sneha._id, name: 'Jio Recharge', amount: 239, frequency: 'monthly', tag: 'essential' },
+    { userId: sneha._id, name: 'Electricity', amount: 700, frequency: 'monthly', tag: 'essential' },
+    { userId: sneha._id, name: 'Zomato orders', amount: 120, frequency: 'daily', tag: 'avoidable' },
+    { userId: sneha._id, name: 'Chai tapri', amount: 40, frequency: 'daily', tag: 'avoidable' },
+    { userId: sneha._id, name: 'Netflix', amount: 149, frequency: 'monthly', tag: 'avoidable' },
+    { userId: sneha._id, name: 'Spotify', amount: 119, frequency: 'monthly', tag: 'avoidable' },
+    { userId: sneha._id, name: 'Amazon shopping', amount: 400, frequency: 'weekly', tag: 'impulse' },
+  ])
+
+  // Sneha's goals
+  await Goal.insertMany([
+    { userId: sneha._id, name: 'Emergency Fund', targetAmount: 100000, savedAmount: 22000, targetDate: '2027-03-01', priority: 1 },
+    { userId: sneha._id, name: 'New Laptop', targetAmount: 65000, savedAmount: 8000, targetDate: '2026-12-01', priority: 2 },
+  ])
+
+  console.log(`👤 Created user: Sneha Patel (${sneha._id}) — FREE tier`)
+
   // ── Summary ───────────────────────────────────────────────────
   console.log('\n✅ Seed complete!')
   console.log('───────────────────────────────────────────')
-  console.log(`  Session ID : ${SEED_SESSION_ID}`)
-  console.log('  Salary     : ₹72,000/mo (in-hand)')
-  console.log('  Savings    : ₹2,45,000')
-  console.log('  SIP        : ₹8,000/mo @ 12% for 15 years')
-  console.log(`  Expenses   : ${expenses.length} items`)
-  console.log(`  Goals      : ${goals.length} aspirations`)
-  console.log(`  Scenarios  : ${scenarios.length} plans`)
-  console.log('───────────────────────────────────────────')
+  console.log('  USER 1 (PREMIUM — Strategist):')
+  console.log('    Email    : arjun.mehta@gmail.com')
+  console.log('    Password : arjun123')
+  console.log(`    Expenses : ${expenses.length} | Goals: ${goals.length} | Scenarios: ${scenarios.length}`)
   console.log('')
-  console.log('👉 To use this user:')
-  console.log('  1. DevTools → Application → Local Storage → localhost:5173')
-  console.log(`  2. Set "mytracker-session-id" → "${SEED_SESSION_ID}"`)
-  console.log('  3. Delete access/refresh token keys')
-  console.log('  4. Refresh')
+  console.log('  USER 2 (FREE — Starter):')
+  console.log('    Email    : sneha.patel@gmail.com')
+  console.log('    Password : sneha123')
+  console.log('    Expenses : 10 | Goals: 2')
+  console.log('───────────────────────────────────────────')
 
   await mongoose.disconnect()
   process.exit(0)

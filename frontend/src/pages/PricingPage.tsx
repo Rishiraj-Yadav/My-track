@@ -1,5 +1,8 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { PageFrame } from '../components'
+import { api } from '../lib/api'
+import { useTier, type Tier as SubTier } from '../lib/subscription'
 
 type Tier = {
   name: string
@@ -32,7 +35,6 @@ const tiers: Tier[] = [
       'No category breakdown charts',
       'No AI insights',
       'No export / reports',
-      'No family sharing',
     ],
   },
   {
@@ -51,8 +53,6 @@ const tiers: Tier[] = [
       'Category breakdown charts',
       'Monte Carlo projections',
       'PDF & CSV exports',
-      'Custom challenges',
-      'Family mode (3 members)',
       'Unlimited data history',
       'Priority support',
     ],
@@ -67,10 +67,7 @@ const tiers: Tier[] = [
     cta: 'Go Strategist',
     features: [
       'Everything in Architect',
-      'Multi-portfolio tracking',
-      'Tax optimization (80C/80D)',
       'Goal auto-allocation',
-      'Zerodha / Groww sync',
       'Advanced NLP console',
       'White-label PDF reports',
       'Dedicated account manager',
@@ -89,11 +86,6 @@ const comparisonFeatures = [
   { name: 'Category breakdown', starter: false, architect: true, strategist: true },
   { name: 'Data history', starter: '3 months', architect: 'Unlimited', strategist: 'Unlimited' },
   { name: 'Export (PDF / CSV)', starter: false, architect: true, strategist: true },
-  { name: 'Custom challenges', starter: false, architect: true, strategist: true },
-  { name: 'Family sharing', starter: false, architect: '3 members', strategist: '5 members' },
-  { name: 'Multi-portfolio tracking', starter: false, architect: false, strategist: true },
-  { name: 'Tax optimization hints', starter: false, architect: false, strategist: true },
-  { name: 'Investment API sync', starter: false, architect: false, strategist: true },
   { name: 'NLP command console', starter: false, architect: false, strategist: true },
   { name: 'White-label reports', starter: false, architect: false, strategist: true },
   { name: 'Support', starter: 'Community', architect: 'Priority email', strategist: 'Dedicated manager' },
@@ -113,18 +105,140 @@ const faqs = [
     a: 'Yes — full refund within 7 days of purchase, no questions asked. After 7 days, you can cancel and continue using premium until the billing cycle ends.',
   },
   {
-    q: 'How does family sharing work?',
-    a: 'Invite family members via email. Each person gets their own private dashboard. You share a combined household view for joint budgeting.',
-  },
-  {
     q: 'Is my financial data secure?',
     a: 'Absolutely. We use AES-256 encryption at rest, TLS 1.3 in transit, and never sell or share your data. Your financial information stays yours.',
   },
 ]
 
+const loadRazorpayScript = () => {
+  return new Promise((resolve) => {
+    const script = document.createElement('script')
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js'
+    script.onload = () => resolve(true)
+    script.onerror = () => resolve(false)
+    document.body.appendChild(script)
+  })
+}
+
 export function PricingPage() {
   const [isYearly, setIsYearly] = useState(false)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
+  const [processingTier, setProcessingTier] = useState<string | null>(null)
+  const { tier: currentTier, changeTier } = useTier()
+  const navigate = useNavigate()
+
+  const handleUpgrade = async (tierName: string) => {
+    const tierMap: Record<string, SubTier> = { Starter: 'starter', Architect: 'architect', Strategist: 'strategist' }
+    const newTier = tierMap[tierName]
+    if (!newTier || newTier === currentTier) return
+
+    if (newTier === 'starter') {
+      changeTier(newTier)
+      navigate('/dashboard')
+      return
+    }
+
+    setProcessingTier(tierName)
+    const res = await loadRazorpayScript()
+    if (!res) {
+      alert('Razorpay SDK failed to load. Are you online?')
+      setProcessingTier(null)
+      return
+    }
+
+    const tierConfig = tiers.find(t => t.name === tierName)
+    const amount = isYearly ? tierConfig?.yearlyPrice : tierConfig?.monthlyPrice
+
+    let orderId = ''
+    try {
+      const resp = await api.createPaymentOrder(tierName, amount || 0)
+      if (resp.success && resp.order) {
+        orderId = resp.order.id
+      } else {
+        throw new Error('Failed to create order')
+      }
+    } catch (err: any) {
+      alert(err.message || 'Error occurred creating order')
+      setProcessingTier(null)
+      return
+    }
+
+    const options: any = {
+      key: 'rzp_test_TYpo9xlqJr9KqH', // Working Razorpay test key
+      amount: (amount || 0) * 100, // Amount in paise
+      currency: 'INR',
+      name: 'Architect App',
+      description: `Upgrade to ${tierName} Plan`,
+      theme: { color: '#4eDEA3' },
+      handler: async function(response: any) {
+        try {
+          const verifyRes = await api.verifyPayment({
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_signature: response.razorpay_signature,
+            status: 'success',
+            newTier
+          })
+
+          if (verifyRes.success) {
+            setProcessingTier(null)
+            changeTier(newTier)
+            navigate('/dashboard')
+          } else {
+            alert('Verification failed')
+            setProcessingTier(null)
+          }
+        } catch (err: any) {
+          alert('Verification failed: ' + (err.message || 'Unknown error'))
+          setProcessingTier(null)
+        }
+      },
+      prefill: {
+        name: localStorage.getItem('mytracker-user-name') || '',
+        email: localStorage.getItem('mytracker-user-email') || '',
+      },
+      modal: {
+        ondismiss: function() {
+          setProcessingTier(null)
+        }
+      }
+    }
+    if (orderId && orderId.startsWith('order_mock_')) {
+      // Simulate Razorpay success automatically for developer environments without real API keys
+      setTimeout(() => {
+        options.handler({
+          razorpay_payment_id: `pay_mock_${Date.now()}`,
+          razorpay_order_id: orderId,
+          razorpay_signature: 'mock_signature_bypass'
+        })
+      }, 1500)
+      return
+    }
+
+    if (orderId) {
+      options.order_id = orderId
+    }
+
+    try {
+      const rzp = new (window as any).Razorpay(options)
+      rzp.on('payment.failed', function(response: any) {
+        setProcessingTier(null)
+        alert('Payment failed: ' + response.error.description)
+      })
+      rzp.open()
+
+      // Backup reset if modal fails to open silently
+      setTimeout(() => {
+        if (!document.querySelector('.razorpay-checkout-frame')) {
+          setProcessingTier(null)
+        }
+      }, 3000)
+    } catch (err) {
+      console.error(err)
+      setProcessingTier(null)
+      alert("Failed to initialize payment gateway.")
+    }
+  }
 
   return (
     <PageFrame>
@@ -225,15 +339,24 @@ export function PricingPage() {
 
                 {/* CTA */}
                 <button
-                  className={`w-full py-4 rounded-xl font-headline font-bold text-base transition-all duration-300 mb-8
+                  onClick={() => handleUpgrade(tier.name)}
+                  disabled={processingTier !== null}
+                  className={`w-full py-4 rounded-xl font-headline font-bold text-base transition-all duration-300 mb-8 disabled:opacity-70 disabled:cursor-wait
                     ${tier.highlighted
-                      ? 'bg-gradient-to-r from-primary to-primary-fixed-dim text-on-primary shadow-[0_10px_30px_-5px_rgba(78,222,163,0.4)] hover:shadow-[0_15px_40px_-5px_rgba(78,222,163,0.5)] hover:scale-[1.02] active:scale-[0.98]'
+                      ? 'bg-gradient-to-r from-primary to-primary-fixed-dim text-on-primary shadow-[0_10px_30px_-5px_rgba(78,222,163,0.4)] hover:shadow-[0_15px_40px_-5px_rgba(78,222,163,0.5)] hover:scale-[1.02] active:scale-[0.98] disabled:hover:scale-100'
                       : tier.monthlyPrice === 0
                         ? 'bg-surface-variant/50 text-on-surface-variant cursor-default'
-                        : 'bg-surface-container-highest text-on-surface border border-outline-variant/20 hover:bg-surface-bright hover:border-outline-variant/40 active:scale-[0.98]'
+                        : 'bg-surface-container-highest text-on-surface border border-outline-variant/20 hover:bg-surface-bright hover:border-outline-variant/40 active:scale-[0.98] disabled:hover:scale-100'
                     }`}
                 >
-                  {tier.cta}
+                  {processingTier === tier.name && tier.monthlyPrice !== 0 ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="material-symbols-outlined text-lg animate-spin">progress_activity</span>
+                      Processing...
+                    </span>
+                  ) : (
+                    currentTier === tier.name.toLowerCase() ? '✓ Current Plan' : tier.cta
+                  )}
                 </button>
 
                 {/* Features */}

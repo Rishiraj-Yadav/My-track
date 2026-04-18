@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { ArrowRight, Check, CheckCircle2, ChevronDown, Languages, Moon, Sun } from 'lucide-react'
 import { useI18n } from './i18n'
+import { TierBadge } from './lib/subscription'
 
 type ShellProps = {
   children: ReactNode
@@ -24,13 +25,13 @@ export function PageFrame({ children }: PageFrameProps) {
   return <main className="pt-32 pb-24 lg:pl-[22rem] pr-8 lg:pr-12 min-h-screen">{children}</main>
 }
 
-export function TopNav() {
+export function TopNav({ onLogout }: { onLogout?: () => void } = {}) {
   const { language, setLanguage, copy } = useI18n()
   const [isLanguageOpen, setIsLanguageOpen] = useState(false)
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     if (typeof window === 'undefined') return 'dark'
 
-    const storedTheme = window.localStorage.getItem('expense-autopsy-theme')
+    const storedTheme = window.localStorage.getItem('mytrack-theme')
     if (storedTheme === 'dark' || storedTheme === 'light') return storedTheme
 
     return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
@@ -40,7 +41,7 @@ export function TopNav() {
     { label: copy.nav.dashboard, href: '/dashboard', icon: 'dashboard' },
     { label: copy.nav.expenses, href: '/expenses', icon: 'payments' },
     { label: copy.nav.simulator, href: '/simulator', icon: 'query_stats' },
-    { label: copy.nav.goals, href: '/goals', icon: 'track_changes', primary: true },
+    { label: copy.nav.goals, href: '/goals', icon: 'track_changes' },
     { label: copy.nav.profile, href: '/profile', icon: 'lock' },
   ]
   const languages = [
@@ -76,7 +77,7 @@ export function TopNav() {
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
-    window.localStorage.setItem('expense-autopsy-theme', theme)
+    window.localStorage.setItem('mytrack-theme', theme)
   }, [theme])
 
   return (
@@ -160,6 +161,13 @@ export function TopNav() {
                 <Moon size={16} />
               </span>
             </button>
+            <button
+              onClick={onLogout}
+              className="hidden md:flex items-center gap-2 px-5 py-2.5 rounded-full bg-surface-container-highest text-on-surface hover:bg-tertiary/15 hover:text-tertiary transition-colors text-sm font-medium font-body border border-outline-variant/15"
+            >
+              <span className="material-symbols-outlined text-base">logout</span>
+              Sign Out
+            </button>
             <div className="flex items-center gap-4 text-primary">
               <button className="topnav-icon-button">
                 <span className="material-symbols-outlined text-2xl">notifications_active</span>
@@ -175,7 +183,7 @@ export function TopNav() {
       <nav className="side-rail hidden lg:flex flex-col h-screen w-72 rounded-r-[3rem] fixed left-0 top-0 z-40 py-10 pt-32">
         <div className="px-8 mb-12">
           <h2 className="side-rail__title text-xl font-bold font-headline mb-1">Wealth Gallery</h2>
-          <p className="side-rail__eyebrow text-xs font-body uppercase tracking-wider">Premium Tier</p>
+          <TierBadge />
         </div>
         <div className="flex flex-col gap-2 font-['Manrope'] font-medium text-sm flex-grow">
           {navLinks.map((item) => (
@@ -197,11 +205,6 @@ export function TopNav() {
               {item.label}
             </NavLink>
           ))}
-        </div>
-        <div className="px-8 mt-auto mb-8">
-          <button className="w-full py-4 rounded-xl bg-gradient-to-r from-primary to-primary-fixed-dim text-on-primary font-bold font-headline shadow-[0_10px_20px_rgba(78,222,163,0.2)] hover:shadow-[0_15px_30px_rgba(78,222,163,0.3)] transition-all">
-            New Simulation
-          </button>
         </div>
         <div className="flex flex-col gap-2 font-['Manrope'] font-medium text-sm mt-auto">
           <NavLink

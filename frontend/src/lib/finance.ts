@@ -1,4 +1,4 @@
-﻿export type Frequency = 'daily' | 'weekly' | 'monthly'
+export type Frequency = 'daily' | 'weekly' | 'monthly'
 export type ExpenseTag = 'essential' | 'avoidable' | 'impulse'
 
 export type Expense = {
@@ -549,8 +549,12 @@ export const projectWithEvents = (plan: SimPlan, events: TimelineEvent[]): Month
     const monthEvents = events.filter(e => (e.month ?? e.atMonth) === m)
     for (const e of monthEvents) {
       const eAmt = e.amount || 0;
-      corpus += eAmt
-      if (eAmt > 0) principal += eAmt
+      if (e.type === 'withdraw') {
+        corpus -= eAmt
+      } else {
+        corpus += eAmt
+        if (eAmt > 0) principal += eAmt
+      }
     }
 
     corpus = corpus * (1 + monthlyRate)
@@ -583,7 +587,13 @@ export const monteCarlo = (plan: SimPlan, options: { runs: number }, events: Tim
       if (isInvesting) corpus += currentSip
 
       const monthEvents = events.filter(e => (e.month ?? e.atMonth) === m)
-      for (const e of monthEvents) corpus += (e.amount || 0)
+      for (const e of monthEvents) {
+        if (e.type === 'withdraw') {
+          corpus -= (e.amount || 0)
+        } else {
+          corpus += (e.amount || 0)
+        }
+      }
 
       const u1 = Math.max(Math.random(), Number.EPSILON)
       const u2 = Math.random()
@@ -731,6 +741,70 @@ export function parseMultiOp(whatIf: string): MultiOpResult {
       })
     }
 
+    // Buy something (one-time withdrawal)
+    const buyMatch = clean.match(/\bbuy\b\s+(?:a\s+)?(.+?)(?:\s+(?:for|at|worth)\s+([\d.]+\s*(?:k|l|lakh|lac|cr)?))?$/i)
+    if (buyMatch) {
+      const target = buyMatch[1]?.trim() || 'item'
+      let eventAmount = 100000 // default guess
+      if (buyMatch[2]) {
+        let raw = buyMatch[2].toLowerCase().replace(/\s+/g, '')
+        if (raw.endsWith('cr')) eventAmount = parseFloat(raw) * 10000000
+        else if (raw.endsWith('l') || raw.endsWith('lakh') || raw.endsWith('lac')) eventAmount = parseFloat(raw) * 100000
+        else if (raw.endsWith('k')) eventAmount = parseFloat(raw) * 1000
+        else eventAmount = parseFloat(raw) || 100000
+      }
+      return buildOp({
+        verb: 'withdraw',
+        target,
+        eventAmount,
+        atMonth: 1,
+        confidence: buyMatch[2] ? 0.88 : 0.6,
+        originalText: clause,
+        label: buyMatch[2]
+          ? `Buy ${target} for ${formatINR(eventAmount)}`
+          : `Buy ${target} (assumed cost ${formatINR(eventAmount)})`,
+      })
+    }
+
+    // Lump sum deposit
+    const lumpSumMatch = clean.match(/\blump\s*sum\b.*?([\d.]+\s*(?:k|l|lakh|lac|cr)?)/i)
+    if (lumpSumMatch) {
+      let raw = lumpSumMatch[1].toLowerCase().replace(/\s+/g, '')
+      let eventAmount: number
+      if (raw.endsWith('cr')) eventAmount = parseFloat(raw) * 10000000
+      else if (raw.endsWith('l') || raw.endsWith('lakh') || raw.endsWith('lac')) eventAmount = parseFloat(raw) * 100000
+      else if (raw.endsWith('k')) eventAmount = parseFloat(raw) * 1000
+      else eventAmount = parseFloat(raw) || 50000
+      return buildOp({
+        verb: 'lump_sum',
+        target: 'corpus',
+        eventAmount,
+        atMonth: 1,
+        confidence: 0.9,
+        originalText: clause,
+        label: `Lump sum deposit of ${formatINR(eventAmount)}`,
+      })
+    }
+
+    // Invest / start investing
+    const investMatch = clean.match(/\b(?:invest|start investing|start sip)\b.*?([\d.]+\s*(?:k|l|lakh|lac|cr)?)/i)
+    if (investMatch) {
+      let raw = investMatch[1].toLowerCase().replace(/\s+/g, '')
+      let amount: number
+      if (raw.endsWith('cr')) amount = parseFloat(raw) * 10000000
+      else if (raw.endsWith('l') || raw.endsWith('lakh') || raw.endsWith('lac')) amount = parseFloat(raw) * 100000
+      else if (raw.endsWith('k')) amount = parseFloat(raw) * 1000
+      else amount = parseFloat(raw) || 5000
+      return buildOp({
+        verb: 'add',
+        target: 'sip',
+        amount,
+        confidence: 0.85,
+        originalText: clause,
+        label: `Add ${formatINR(amount)} to monthly SIP`,
+      })
+    }
+
     return {
       verb: 'unknown',
       originalText: clause,
@@ -760,11 +834,15 @@ export function parseMultiOp(whatIf: string): MultiOpResult {
 }
 
 export const buildCommandSuggestions = (expenses: Expense[]): string[] => {
-  return [
+  const base = [
     'Add ₹5000 to monthly SIP',
     'Increase SIP by 10%',
     'Delay SIP by 3 months',
-    ...(expenses || []).slice(0, 2).map((e) => `Stop ${e.name}`),
+    'Buy a car for 8L',
+    'Lump sum 2L',
+    'Invest 15k',
   ]
+  const expenseNames = (expenses || []).slice(0, 2).map((e) => `Stop ${e.name}`)
+  return [...base, ...expenseNames]
 }
 

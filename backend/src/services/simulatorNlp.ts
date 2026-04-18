@@ -62,20 +62,89 @@ export type SimulatorNlpResponse = {
 }
 
 function buildFallbackResponse(command: string): SimulatorNlpResponse {
+  const norm = command.toLowerCase()
+  const ops: ParsedOp[] = []
+  
+  // Rule 1: Add/Increase Amount
+  const addMatch = norm.match(/(add|increase).*?\b(\d+)\b.*?(sip|savings|investment)/i)
+  if (addMatch) {
+    ops.push({
+      verb: 'add',
+      target: addMatch[3] === 'sip' ? 'Monthly SIP' : addMatch[3],
+      amount: parseInt(addMatch[2], 10),
+      confidence: 0.85,
+      originalText: command,
+      label: 'Rule-based parse (no API key)'
+    })
+  }
+  
+  // Rule 2: Increase by percentage
+  const pctMatch = norm.match(/increase.*?(sip|savings).*?\b(\d+)%/i)
+  if (pctMatch) {
+    ops.push({
+      verb: 'step_up',
+      target: pctMatch[1] === 'sip' ? 'Monthly SIP' : pctMatch[1],
+      stepUpRate: parseInt(pctMatch[2], 10) / 100,
+      confidence: 0.9,
+      originalText: command,
+      label: 'Rule-based parse (no API key)'
+    })
+  }
+
+  // Rule 3: Stop/Cut Expense
+  const stopMatch = norm.match(/(stop|cut|pause)\s+(.*)/i)
+  if (stopMatch && stopMatch[2] && !stopMatch[2].includes('sip')) {
+    ops.push({
+      verb: 'stop',
+      target: stopMatch[2].trim(),
+      confidence: 0.95,
+      originalText: command,
+      label: 'Rule-based parse (no API key)'
+    })
+  }
+
+  // Rule 4: Delay
+  const delayMatch = norm.match(/delay.*?(sip|savings).*?\b(\d+)\s+month/i)
+  if (delayMatch) {
+    ops.push({
+      verb: 'delay',
+      target: delayMatch[1] === 'sip' ? 'Monthly SIP' : delayMatch[1],
+      delayMonths: parseInt(delayMatch[2], 10),
+      confidence: 0.88,
+      originalText: command,
+      label: 'Rule-based parse (no API key)'
+    })
+  }
+
+  // Rule 5: Buy something
+  const buyMatch = norm.match(/buy\s+(a\s+)?(.*)/i)
+  if (buyMatch && buyMatch[2]) {
+    ops.push({
+      verb: 'withdraw',
+      target: buyMatch[2].trim(),
+      eventAmount: 100000,
+      confidence: 0.6,
+      originalText: command,
+      label: 'Rule-based parse (no API key) - Assumed dummy cost'
+    })
+  }
+
+  if (ops.length === 0) {
+    ops.push({
+      verb: 'unknown',
+      originalText: command,
+      confidence: 0,
+      label: 'Gemini parsing is unavailable and no local rules matched. Add GEMINI_API_KEY.',
+    })
+  }
+
   return {
-    ops: [
-      {
-        verb: 'unknown',
-        originalText: command,
-        confidence: 0,
-        label: 'Gemini parsing is unavailable. Add GEMINI_API_KEY to enable model-backed detection.',
-      },
-    ],
-    primaryVerb: 'unknown',
+    ops,
+    primaryVerb: ops[0].verb !== 'unknown' ? ops[0].verb : 'unknown',
     isAmbiguous: false,
     alternatives: [],
-    message: 'Gemini parsing unavailable',
-    model: env.GEMINI_MODEL,
+    message: 'Local heuristic parsing applied.',
+    model: 'RuleEngine v1',
     provider: 'fallback',
   }
 }
@@ -122,13 +191,10 @@ export async function parseSimulatorCommandWithGemini(command: string): Promise<
     'Return an object with keys: ops, primaryVerb, isAmbiguous, alternatives, message.',
     'Allowed verbs: stop, add, cut, delay, unknown, step_up, pause, lump_sum, withdraw, redirect.',
     'Each op may contain: verb, target, amount, originalText, confidence, durationMonths, atMonth, delayMonths, stepUpRate, eventAmount, inheritedVerb, label.',
-    'Use amount for recurring monthly adjustments.',
-    'Use eventAmount for one-time lump sum or withdrawal amounts.',
-    'Use delayMonths for delayed starts.',
-    'Use stepUpRate for annual step-up percentages.',
-    'Use confidence from 0 to 1.',
-    'If the command is unclear, mark isAmbiguous true and provide up to 3 alternatives.',
-    'If nothing is safe to parse, return one unknown op.',
+    'Use amount for recurring adjustments. Use eventAmount for one-time purchases or withdrawals.',
+    'If the user says they want to buy something without giving a price, set verb: "withdraw", target: the item, use a dummy eventAmount like 100000, and set a low confidence.',
+    'Handle any generic or abstract financial intent gracefully mapping it to the closest verb.',
+    'If the command is truly incomprehensible, return one unknown op.',
     'Do not include markdown unless unavoidable.',
     `Command: ${command}`,
   ].join('\n')

@@ -52,6 +52,7 @@ const userSchema = new Schema(
     whatIf: { type: String, default: '' },
     badges: { type: [badgeSchema], default: [] },
     refreshTokenHash: { type: String, default: '' },
+    tier: { type: String, enum: ['starter', 'architect', 'strategist'], default: 'starter' },
   },
   { timestamps: true },
 )

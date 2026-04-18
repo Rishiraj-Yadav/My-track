@@ -1,7 +1,8 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Route, Routes, useLocation } from 'react-router-dom'
+import { Route, Routes, useLocation, Navigate } from 'react-router-dom'
 import { AppShell, TopNav } from './components'
+import { AuthPage } from './pages/AuthPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { ExpensesPage } from './pages/ExpensesPage'
 import { GoalsPage } from './pages/GoalsPage'
@@ -13,16 +14,43 @@ import { ScenariosPage } from './pages/ScenariosPage'
 import { SimulatorPage } from './pages/SimulatorPage'
 import { useAppStore } from './store'
 import { useI18n } from './i18n'
+import { clearTokens, getAccessToken } from './lib/api'
 
 function App() {
   const bootstrap = useAppStore((state) => state.bootstrap)
   const isLoading = useAppStore((state) => state.isLoading)
   const error = useAppStore((state) => state.error)
   const { copy } = useI18n()
+  const [isAuthed, setIsAuthed] = useState(() => !!getAccessToken())
 
   useEffect(() => {
-    void bootstrap()
-  }, [bootstrap])
+    if (isAuthed) {
+      void bootstrap()
+    }
+  }, [bootstrap, isAuthed])
+
+  const handleLogout = () => {
+    clearTokens()
+    localStorage.removeItem('mytracker-authed')
+    localStorage.removeItem('mytracker-user-email')
+    localStorage.removeItem('mytracker-user-name')
+    localStorage.removeItem('mytracker-tier')
+    localStorage.removeItem('mytracker-session-id')
+    setIsAuthed(false)
+    window.location.href = '/auth'
+  }
+
+  // Not authenticated → show auth page
+  if (!isAuthed) {
+    return (
+      <AppShell>
+        <Routes>
+          <Route path="/auth" element={<AuthPage />} />
+          <Route path="*" element={<Navigate to="/auth" replace />} />
+        </Routes>
+      </AppShell>
+    )
+  }
 
   if (isLoading) {
     return (
@@ -54,17 +82,17 @@ function App() {
 
   return (
     <AppShell>
-      <AppRoutes />
+      <AppRoutes onLogout={handleLogout} />
     </AppShell>
   )
 }
 
-function AppRoutes() {
+function AppRoutes({ onLogout }: { onLogout: () => void }) {
   const location = useLocation()
 
   return (
     <>
-      <TopNav />
+      <TopNav onLogout={onLogout} />
       <AnimatePresence mode="wait">
         <motion.div
           key={location.pathname}
@@ -75,6 +103,7 @@ function AppRoutes() {
         >
           <Routes location={location}>
             <Route path="/" element={<LandingPage />} />
+            <Route path="/auth" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/expenses" element={<ExpensesPage />} />
             <Route path="/simulator" element={<SimulatorPage />} />

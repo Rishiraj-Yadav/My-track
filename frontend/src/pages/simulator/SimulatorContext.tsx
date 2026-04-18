@@ -1,4 +1,4 @@
-﻿/* eslint-disable react-refresh/only-export-components */
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useDeferredValue, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import type {
@@ -41,12 +41,12 @@ type SimCtx = {
 const Ctx = createContext<SimCtx | null>(null)
 
 const buildInitialPlan = (sip: { monthlyAmount: number; annualReturn: number; durationMonths: number; delayMonths: number }): SimPlan => ({
-  monthlyAmount: sip.monthlyAmount,
-  annualReturn: sip.annualReturn,
-  durationMonths: sip.durationMonths,
+  monthlyAmount: sip.monthlyAmount || 10000,
+  annualReturn: sip.annualReturn || 12,
+  durationMonths: sip.durationMonths || 180,
   delayMonths: sip.delayMonths,
   inflationRate: 6,
-  stepUpRate: 0,
+  stepUpRate: 5,
   initialCorpus: 0,
 })
 

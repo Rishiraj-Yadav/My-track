@@ -172,3 +172,32 @@ export const updateBadge = asyncHandler(async (req, res) => {
   await req.user.save()
   res.json({ badges: req.user.badges })
 })
+
+const tierSchema = z.object({
+  tier: z.enum(['starter', 'architect', 'strategist']),
+})
+
+export const getTier = asyncHandler(async (req, res) => {
+  res.json({ tier: (req.user as any)?.tier ?? 'starter' })
+})
+
+export const updateTier = asyncHandler(async (req, res) => {
+  const { tier } = tierSchema.parse(req.body)
+  if (!req.user) {
+    res.status(401).json({ message: 'Unauthorized' })
+    return
+  }
+
+  const user = await User.findByIdAndUpdate(
+    req.user._id,
+    { $set: { tier } },
+    { new: true, runValidators: true },
+  )
+
+  if (!user) {
+    res.status(404).json({ message: 'User not found' })
+    return
+  }
+
+  res.json({ tier: user.tier })
+})

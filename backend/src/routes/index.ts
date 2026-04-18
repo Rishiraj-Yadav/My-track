@@ -7,6 +7,7 @@ import { goalRouter } from './goalRoutes.js'
 import { profileRouter } from './profileRoutes.js'
 import { scenarioRouter } from './scenarioRoutes.js'
 import { simulatorRouter } from './simulatorRoutes.js'
+import { paymentRouter } from './paymentRoutes.js'
 
 export const apiRouter = Router()
 
@@ -18,3 +19,4 @@ apiRouter.use('/goals', goalRouter)
 apiRouter.use('/scenarios', scenarioRouter)
 apiRouter.use('/dashboard', dashboardRouter)
 apiRouter.use('/simulator', simulatorRouter)
+apiRouter.use('/payments', paymentRouter)

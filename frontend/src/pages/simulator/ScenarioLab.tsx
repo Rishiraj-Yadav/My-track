@@ -1,9 +1,10 @@
-﻿import { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   CartesianGrid,
   Legend,
   Line,
   LineChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -41,11 +42,9 @@ export function ScenarioLab() {
     [selectedScenarios, plan],
   )
 
-  const end = Math.max(1, Math.floor(activeMonth))
-
   const chartData = useMemo(() => {
     const maxLen = Math.max(...scenarioTimelines.map((timelineRow) => timelineRow.length), timeline.length)
-    return Array.from({ length: Math.min(end, maxLen) }, (_, index) => {
+    return Array.from({ length: maxLen }, (_, index) => {
       const month = index + 1
       const row: Record<string, number> = { month, current: timeline[index]?.corpus ?? 0 }
       selectedScenarios.forEach((scenario, scenarioIndex) => {
@@ -53,7 +52,7 @@ export function ScenarioLab() {
       })
       return row
     })
-  }, [timeline, scenarioTimelines, selectedScenarios, end])
+  }, [timeline, scenarioTimelines, selectedScenarios])
 
   const maxY =
     Math.max(
@@ -180,6 +179,14 @@ export function ScenarioLab() {
               name={scenario.name}
             />
           ))}
+          {Math.floor(activeMonth) > 0 ? (
+            <ReferenceLine
+              x={Math.floor(activeMonth)}
+              stroke="rgba(255,255,255,0.6)"
+              strokeDasharray="4 3"
+              strokeWidth={2}
+            />
+          ) : null}
         </LineChart>
       </ResponsiveContainer>
     </Card>

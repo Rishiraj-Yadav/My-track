@@ -7,7 +7,7 @@ import type {
   Scenario,
   SipPlan,
 } from './lib/finance'
-import { api, clearTokens, getSessionId, setTokens } from './lib/api'
+import { api, clearTokens, getAccessToken, getSessionId, setTokens } from './lib/api'
 
 type Challenge = {
   name: string
@@ -100,15 +100,32 @@ export const useAppStore = create<AppState>()((set, get) => ({
       const { hasBootstrapped } = get()
       if (hasBootstrapped) return
       set({ hasBootstrapped: true, isLoading: true, error: null })
-      getSessionId()
-      const session = await api.bootstrap()
-      setTokens(session.accessToken, session.refreshToken)
+
+      const existingToken = getAccessToken()
+      let userData: any
+
+      if (existingToken) {
+        // User logged in via AuthPage — use their existing tokens to fetch profile
+        const meRes = await api.getMe()
+        userData = meRes.user
+      } else {
+        // Anonymous / first visit — bootstrap a session
+        getSessionId()
+        const session = await api.bootstrap()
+        setTokens(session.accessToken, session.refreshToken)
+        userData = session.user
+      }
+
+      // Sync tier from DB → localStorage
+      const userTier = userData.tier || 'starter'
+      localStorage.setItem('mytracker-tier', userTier)
+
       set({
-        profile: session.user.profile,
-        sip: session.user.sip,
-        challenge: session.user.challenge,
-        whatIf: session.user.whatIf,
-        badges: session.user.badges.map(normalizeBadge),
+        profile: userData.profile,
+        sip: userData.sip,
+        challenge: userData.challenge,
+        whatIf: userData.whatIf,
+        badges: (userData.badges || []).map(normalizeBadge),
         isLoading: false,
       })
 

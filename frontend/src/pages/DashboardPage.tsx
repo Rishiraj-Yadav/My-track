@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import {
   Area,
   AreaChart,
@@ -20,9 +20,13 @@ import {
   monthlyEquivalent,
 } from '../lib/finance'
 import { useAppStore } from '../store'
+import { useTier } from '../lib/subscription'
+import { useI18n } from '../i18n'
 
 export function DashboardPage() {
+  const { copy } = useI18n()
   const { expenses, goals, sip, profile, whatIf } = useAppStore()
+  const { canAccess } = useTier()
   const totals = calculateMonthlyTotals(expenses)
   const saveRate =
     profile.monthlySalary > 0
@@ -64,18 +68,18 @@ export function DashboardPage() {
       <header className="mb-16 flex flex-col md:flex-row justify-between items-baseline gap-6">
         <div>
           <h1 className="font-headline text-4xl md:text-[3.5rem] font-bold tracking-tight text-on-surface leading-tight">
-            Financial Overview
+            {(copy as any).dashboard?.title || 'Financial Overview'}
           </h1>
           <p className="text-on-surface-variant font-body text-base mt-2 max-w-lg">
-            Your wealth architecture at a glance. Analyzing cash flow velocity and structural integrity.
+            {(copy as any).dashboard?.subtitle || 'Your wealth architecture at a glance. Analyzing cash flow velocity and structural integrity.'}
           </p>
         </div>
-        <div className="text-right">
-          <p className="text-sm font-medium text-outline uppercase tracking-widest mb-1">
-            Monthly Salary
-          </p>
-          <div className="font-headline text-5xl md:text-6xl font-extrabold text-on-surface tracking-tighter group hover:text-primary transition-colors duration-500">
-            {formatCompactINR(profile.monthlySalary)}
+        <div className="flex items-center gap-4">
+          <div className="text-right">
+            <p className="text-sm font-medium text-outline uppercase tracking-widest mb-1">Monthly Salary</p>
+            <div className="font-headline text-5xl md:text-6xl font-extrabold text-on-surface tracking-tighter group hover:text-primary transition-colors duration-500">
+              {formatCompactINR(profile.monthlySalary)}
+            </div>
           </div>
         </div>
       </header>
@@ -87,8 +91,8 @@ export function DashboardPage() {
               <div className="absolute -right-10 -top-10 w-40 h-40 bg-tertiary-fixed-dim/10 rounded-full blur-3xl group-hover:bg-tertiary-fixed-dim/20 transition-all duration-700"></div>
               <div className="flex justify-between items-start mb-6 relative z-10">
                 <div>
-                  <h3 className="font-headline text-lg font-bold text-on-surface">Total Spending</h3>
-                  <p className="text-sm text-on-surface-variant font-medium mt-1">Trailing 30 Days</p>
+                  <h3 className="font-headline text-lg font-bold text-on-surface">{(copy as any).dashboard?.totalSpending || 'Total Spending'}</h3>
+                  <p className="text-sm text-on-surface-variant font-medium mt-1">{(copy as any).dashboard?.trailing30Days || 'Trailing 30 Days'}</p>
                 </div>
                 <div className="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center text-tertiary">
                   <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
@@ -107,8 +111,8 @@ export function DashboardPage() {
               <div className="absolute -right-10 -top-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl group-hover:bg-primary/20 transition-all duration-700"></div>
               <div className="flex justify-between items-start mb-6 relative z-10">
                 <div>
-                  <h3 className="font-headline text-lg font-bold text-on-surface">Savings Rate</h3>
-                  <p className="text-sm text-on-surface-variant font-medium mt-1">Monthly Velocity</p>
+                  <h3 className="font-headline text-lg font-bold text-on-surface">{(copy as any).dashboard?.savingsRate || 'Savings Rate'}</h3>
+                  <p className="text-sm text-on-surface-variant font-medium mt-1">{(copy as any).dashboard?.monthlyVelocity || 'Monthly Velocity'}</p>
                 </div>
                 <div className="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center text-primary">
                   <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
@@ -127,9 +131,9 @@ export function DashboardPage() {
           <div className="bg-surface-container-low rounded-xl p-8 border border-outline-variant/15 shadow-[0_20px_40px_rgba(0,0,0,0.2)] h-[440px] flex flex-col">
             <div className="flex justify-between items-end mb-8">
               <div>
-                <h3 className="font-headline text-xl font-bold text-on-surface mb-1">SIP Growth Trajectory</h3>
+                <h3 className="font-headline text-xl font-bold text-on-surface mb-1">{(copy as any).dashboard?.sipGrowth || 'SIP Growth Trajectory'}</h3>
                 <p className="text-sm text-on-surface-variant font-medium">
-                  Systematic Investment Portfolio Performance
+                  {(copy as any).dashboard?.sipDesc || 'Systematic Investment Portfolio Performance'}
                 </p>
               </div>
               <div className="flex gap-2">
@@ -202,16 +206,16 @@ export function DashboardPage() {
                 </div>
               </div>
               <div>
-                <p className="text-lg font-bold text-primary mb-1">Health rating</p>
+                <p className="text-lg font-bold text-primary mb-1">{(copy as any).dashboard?.healthRating || 'Health rating'}</p>
                 <p className="text-sm text-on-surface-variant font-medium leading-relaxed">
-                  Based on your savings rate, leakage, and goal progress.
+                  {(copy as any).dashboard?.healthDesc || 'Based on your savings rate, leakage, and goal progress.'}
                 </p>
               </div>
             </div>
           </div>
 
           <div className="bg-surface-container-low rounded-xl p-8 border border-outline-variant/15 shadow-[0_20px_40px_rgba(0,0,0,0.2)] flex-1">
-            <h3 className="font-headline text-lg font-bold text-on-surface mb-6">Allocation Architecture</h3>
+            <h3 className="font-headline text-lg font-bold text-on-surface mb-6">{(copy as any).dashboard?.allocationArch || 'Allocation Architecture'}</h3>
             <div className="space-y-6">
               {topCats.map((c) => (
                 <div key={c.category}>
@@ -238,8 +242,8 @@ export function DashboardPage() {
         <div className="bg-surface-container-low rounded-xl p-8 border border-outline-variant/15 shadow-[0_20px_40px_rgba(0,0,0,0.2)] flex flex-col">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h3 className="font-headline text-lg font-bold text-on-surface">Capital Leakage</h3>
-              <p className="text-sm text-on-surface-variant font-medium">Identified inefficiencies</p>
+              <h3 className="font-headline text-lg font-bold text-on-surface">{(copy as any).dashboard?.leakageRadar || 'Leakage Radar'}</h3>
+              <p className="text-sm text-on-surface-variant font-medium">{(copy as any).dashboard?.avoidableBleed || 'Identified inefficiencies'}</p>
             </div>
             <div className="w-10 h-10 rounded-full bg-tertiary-fixed-dim/10 flex items-center justify-center text-tertiary">
               <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
@@ -270,7 +274,7 @@ export function DashboardPage() {
 
         <div className="bg-surface-container-low rounded-xl p-8 border border-outline-variant/15 shadow-[0_20px_40px_rgba(0,0,0,0.2)] relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-secondary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4"></div>
-          <h3 className="font-headline text-lg font-bold text-on-surface mb-8 relative z-10">Structural Goals</h3>
+          <h3 className="font-headline text-lg font-bold text-on-surface mb-8 relative z-10">{(copy as any).nav?.goals || 'Structural Goals'}</h3>
           <div className="relative z-10 space-y-8 flex-grow overflow-y-auto max-h-64 pr-2">
             {goals.map((g, i) => {
               const pct = (g.savedAmount / Math.max(g.targetAmount, 1)) * 100

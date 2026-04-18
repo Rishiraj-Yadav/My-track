@@ -4,11 +4,13 @@ import {
   getBadges,
   getProfile,
   getSip,
+  getTier,
   getWhatIf,
   updateBadge,
   updateChallenge,
   updateProfile,
   updateSip,
+  updateTier,
   updateWhatIf,
 } from '../controllers/profileController.js'
 import { requireAuth } from '../middleware/auth.js'
@@ -25,4 +27,5 @@ profileRouter.get('/challenge', requireAuth, getChallenge)
 profileRouter.put('/challenge', requireAuth, updateChallenge)
 profileRouter.get('/badges', requireAuth, getBadges)
 profileRouter.put('/badges', requireAuth, updateBadge)
-
+profileRouter.get('/tier', requireAuth, getTier)
+profileRouter.put('/tier', requireAuth, updateTier)
