@@ -19,7 +19,7 @@ export function LandingPage() {
           </h1>
 
           <p className="font-body text-on-surface-variant text-lg md:text-xl max-w-xl leading-relaxed">
-            Move beyond simple tracking. The Financial Architect reveals the true trajectory of your wealth with high-fidelity simulations.
+            Move beyond simple tracking. The Financial MyTrack reveals the true trajectory of your wealth with high-fidelity simulations.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-6 mt-4 w-full sm:w-auto">
@@ -98,7 +98,7 @@ export function LandingPage() {
           <div className="md:col-span-3 bg-surface-container-lowest border border-outline-variant/10 rounded-xl p-10 flex flex-col md:flex-row items-center justify-between gap-12 group hover:border-outline-variant/30 transition-colors duration-500">
             <div className="w-full md:w-1/2 flex flex-col gap-6">
               <span className="material-symbols-outlined text-primary text-4xl">track_changes</span>
-              <h3 className="font-headline font-bold text-3xl text-on-surface">Architectural Goal Planning</h3>
+              <h3 className="font-headline font-bold text-3xl text-on-surface">MyTrackural Goal Planning</h3>
               <p className="font-body text-on-surface-variant text-lg">
                 Structure your aspirations into achievable milestones. Set timelines, allocate capital, and watch the foundation build.
               </p>

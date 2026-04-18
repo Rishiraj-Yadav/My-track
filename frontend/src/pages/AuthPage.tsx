@@ -67,7 +67,7 @@ export function AuthPage() {
         {/* Logo */}
         <div className="text-center mb-10">
           <h1 className="font-headline text-4xl font-black tracking-tighter text-primary mb-2">
-            Architect
+            MyTrack
           </h1>
           <p className="font-body text-on-surface-variant text-sm">
             Your personal wealth intelligence platform

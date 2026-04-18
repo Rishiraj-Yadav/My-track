@@ -248,7 +248,7 @@ export function GoalsPage() {
               <div>
                 <div className="flex items-center gap-3 mb-4">
                   <span className="material-symbols-outlined text-secondary">lightbulb</span>
-                  <h4 className="font-headline text-lg font-bold text-on-surface">Architect Suggestion</h4>
+                  <h4 className="font-headline text-lg font-bold text-on-surface">MyTrack Suggestion</h4>
                 </div>
                 <p className="font-body text-sm text-on-surface-variant">Increasing your timeline by just 3 years reduces the required monthly SIP significantly.</p>
               </div>

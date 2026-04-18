@@ -20,7 +20,7 @@ export function createApp() {
       credentials: true,
     })
   )
-  app.use(helmet())
+  app.use((helmet as any)())
   app.use(express.json({ limit: '1mb' }))
 
   app.get('/health', (_req, res) => {

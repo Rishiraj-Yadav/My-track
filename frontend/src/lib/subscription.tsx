@@ -2,7 +2,7 @@ import { useState, useCallback, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
 // ─── Tier Types ───────────────────────────────────────────────────
-export type Tier = 'starter' | 'architect' | 'strategist'
+export type Tier = 'starter' | 'mytrack' | 'strategist'
 
 export type Feature =
   | 'unlimited_expenses'
@@ -37,7 +37,7 @@ export const TIER_LIMITS: Record<Tier, {
     historyMonths: 3,
     features: ['category_breakdown'],
   },
-  architect: {
+  mytrack: {
     maxExpenses: Infinity,
     maxGoals: Infinity,
     maxScenarios: Infinity,
@@ -86,7 +86,7 @@ const TIER_KEY = 'mytracker-tier'
 
 export const getTier = (): Tier => {
   const stored = localStorage.getItem(TIER_KEY)
-  if (stored === 'architect' || stored === 'strategist') return stored
+  if (stored === 'mytrack' || stored === 'strategist') return stored
   return 'starter'
 }
 
@@ -108,23 +108,23 @@ export const useTier = () => {
     [tier],
   )
 
-  const tierName = tier === 'starter' ? 'Starter' : tier === 'architect' ? 'Architect' : 'Strategist'
+  const tierName = tier === 'starter' ? 'Starter' : tier === 'mytrack' ? 'MyTrack' : 'Strategist'
 
   return { tier, tierName, changeTier, canAccess, limits: TIER_LIMITS[tier] }
 }
 
 // ─── Feature Labels ───────────────────────────────────────────────
 const FEATURE_LABELS: Record<Feature, { name: string; minTier: Tier }> = {
-  unlimited_expenses: { name: 'Unlimited Expenses', minTier: 'architect' },
-  unlimited_goals: { name: 'Unlimited Goals', minTier: 'architect' },
-  unlimited_scenarios: { name: 'Unlimited Scenarios', minTier: 'architect' },
-  ai_insights: { name: 'AI Spending Insights', minTier: 'architect' },
+  unlimited_expenses: { name: 'Unlimited Expenses', minTier: 'mytrack' },
+  unlimited_goals: { name: 'Unlimited Goals', minTier: 'mytrack' },
+  unlimited_scenarios: { name: 'Unlimited Scenarios', minTier: 'mytrack' },
+  ai_insights: { name: 'AI Spending Insights', minTier: 'mytrack' },
   category_breakdown: { name: 'Category Breakdown', minTier: 'starter' },
-  monte_carlo: { name: 'Monte Carlo Projections', minTier: 'architect' },
-  export_reports: { name: 'Export Reports', minTier: 'architect' },
-  custom_challenges: { name: 'Custom Challenges', minTier: 'architect' },
-  family_mode: { name: 'Family Mode', minTier: 'architect' },
-  unlimited_history: { name: 'Unlimited History', minTier: 'architect' },
+  monte_carlo: { name: 'Monte Carlo Projections', minTier: 'mytrack' },
+  export_reports: { name: 'Export Reports', minTier: 'mytrack' },
+  custom_challenges: { name: 'Custom Challenges', minTier: 'mytrack' },
+  family_mode: { name: 'Family Mode', minTier: 'mytrack' },
+  unlimited_history: { name: 'Unlimited History', minTier: 'mytrack' },
   multi_portfolio: { name: 'Multi-Portfolio Tracking', minTier: 'strategist' },
   tax_optimizer: { name: 'Tax Optimizer', minTier: 'strategist' },
   goal_auto_allocate: { name: 'Goal Auto-Allocation', minTier: 'strategist' },
@@ -148,7 +148,7 @@ export function UpgradeGate({ feature, children, blur = true }: UpgradeGateProps
   }
 
   const meta = FEATURE_LABELS[feature]
-  const tierLabel = meta.minTier === 'architect' ? 'Architect' : 'Strategist'
+  const tierLabel = meta.minTier === 'mytrack' ? 'MyTrack' : 'Strategist'
 
   return (
     <div className="relative">
@@ -185,7 +185,7 @@ export function TierBadge() {
 
   const colors = {
     starter: 'bg-surface-variant text-on-surface-variant',
-    architect: 'bg-primary/15 text-primary',
+    mytrack: 'bg-primary/15 text-primary',
     strategist: 'bg-secondary/15 text-secondary',
   }
 

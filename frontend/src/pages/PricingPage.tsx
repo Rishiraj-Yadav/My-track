@@ -38,13 +38,13 @@ const tiers: Tier[] = [
     ],
   },
   {
-    name: 'Architect',
+    name: 'MyTrack',
     tagline: 'For the disciplined saver',
     monthlyPrice: 149,
     yearlyPrice: 1499,
     badge: 'Most Popular',
     highlighted: true,
-    cta: 'Upgrade to Architect',
+    cta: 'Upgrade to MyTrack',
     features: [
       'Unlimited expenses',
       'Unlimited goals',
@@ -66,7 +66,7 @@ const tiers: Tier[] = [
     badge: 'Pro',
     cta: 'Go Strategist',
     features: [
-      'Everything in Architect',
+      'Everything in MyTrack',
       'Goal auto-allocation',
       'Advanced NLP console',
       'White-label PDF reports',
@@ -77,18 +77,18 @@ const tiers: Tier[] = [
 ]
 
 const comparisonFeatures = [
-  { name: 'Expense tracking', starter: '15 max', architect: 'Unlimited', strategist: 'Unlimited' },
-  { name: 'Financial goals', starter: '2 max', architect: 'Unlimited', strategist: 'Unlimited' },
-  { name: 'Scenario comparisons', starter: '1', architect: 'Unlimited', strategist: 'Unlimited' },
-  { name: 'Health score', starter: true, architect: true, strategist: true },
-  { name: 'SIP calculator', starter: 'Basic', architect: 'Advanced', strategist: 'Advanced + Monte Carlo' },
-  { name: 'Spending insights (AI)', starter: false, architect: true, strategist: true },
-  { name: 'Category breakdown', starter: false, architect: true, strategist: true },
-  { name: 'Data history', starter: '3 months', architect: 'Unlimited', strategist: 'Unlimited' },
-  { name: 'Export (PDF / CSV)', starter: false, architect: true, strategist: true },
-  { name: 'NLP command console', starter: false, architect: false, strategist: true },
-  { name: 'White-label reports', starter: false, architect: false, strategist: true },
-  { name: 'Support', starter: 'Community', architect: 'Priority email', strategist: 'Dedicated manager' },
+  { name: 'Expense tracking', starter: '15 max', mytrack: 'Unlimited', strategist: 'Unlimited' },
+  { name: 'Financial goals', starter: '2 max', mytrack: 'Unlimited', strategist: 'Unlimited' },
+  { name: 'Scenario comparisons', starter: '1', mytrack: 'Unlimited', strategist: 'Unlimited' },
+  { name: 'Health score', starter: true, mytrack: true, strategist: true },
+  { name: 'SIP calculator', starter: 'Basic', mytrack: 'Advanced', strategist: 'Advanced + Monte Carlo' },
+  { name: 'Spending insights (AI)', starter: false, mytrack: true, strategist: true },
+  { name: 'Category breakdown', starter: false, mytrack: true, strategist: true },
+  { name: 'Data history', starter: '3 months', mytrack: 'Unlimited', strategist: 'Unlimited' },
+  { name: 'Export (PDF / CSV)', starter: false, mytrack: true, strategist: true },
+  { name: 'NLP command console', starter: false, mytrack: false, strategist: true },
+  { name: 'White-label reports', starter: false, mytrack: false, strategist: true },
+  { name: 'Support', starter: 'Community', mytrack: 'Priority email', strategist: 'Dedicated manager' },
 ]
 
 const faqs = [
@@ -128,7 +128,7 @@ export function PricingPage() {
   const navigate = useNavigate()
 
   const handleUpgrade = async (tierName: string) => {
-    const tierMap: Record<string, SubTier> = { Starter: 'starter', Architect: 'architect', Strategist: 'strategist' }
+    const tierMap: Record<string, SubTier> = { Starter: 'starter', MyTrack: 'mytrack', Strategist: 'strategist' }
     const newTier = tierMap[tierName]
     if (!newTier || newTier === currentTier) return
 
@@ -167,7 +167,7 @@ export function PricingPage() {
       key: 'rzp_test_TYpo9xlqJr9KqH', // Working Razorpay test key
       amount: (amount || 0) * 100, // Amount in paise
       currency: 'INR',
-      name: 'Architect App',
+      name: 'MyTrack App',
       description: `Upgrade to ${tierName} Plan`,
       theme: { color: '#4eDEA3' },
       handler: async function(response: any) {
@@ -424,7 +424,7 @@ export function PricingPage() {
                   Feature
                 </th>
                 <th className="font-headline text-base font-bold text-on-surface p-5 text-center">Starter</th>
-                <th className="font-headline text-base font-bold text-primary p-5 text-center bg-primary/5">Architect</th>
+                <th className="font-headline text-base font-bold text-primary p-5 text-center bg-primary/5">MyTrack</th>
                 <th className="font-headline text-base font-bold text-secondary p-5 text-center">Strategist</th>
               </tr>
             </thead>
@@ -432,16 +432,16 @@ export function PricingPage() {
               {comparisonFeatures.map((row, i) => (
                 <tr key={row.name} className={`border-b border-outline-variant/8 ${i % 2 === 0 ? '' : 'bg-surface-container-lowest/30'}`}>
                   <td className="font-body text-sm text-on-surface p-5 font-medium">{row.name}</td>
-                  {(['starter', 'architect', 'strategist'] as const).map((tier) => {
+                  {(['starter', 'mytrack', 'strategist'] as const).map((tier) => {
                     const val = row[tier]
                     return (
-                      <td key={tier} className={`p-5 text-center ${tier === 'architect' ? 'bg-primary/5' : ''}`}>
+                      <td key={tier} className={`p-5 text-center ${tier === 'mytrack' ? 'bg-primary/5' : ''}`}>
                         {val === true ? (
                           <span className="material-symbols-outlined text-primary text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
                         ) : val === false ? (
                           <span className="material-symbols-outlined text-surface-variant text-xl">remove</span>
                         ) : (
-                          <span className={`font-body text-sm ${tier === 'architect' ? 'text-primary font-semibold' : 'text-on-surface-variant'}`}>
+                          <span className={`font-body text-sm ${tier === 'mytrack' ? 'text-primary font-semibold' : 'text-on-surface-variant'}`}>
                             {val}
                           </span>
                         )}
@@ -465,7 +465,7 @@ export function PricingPage() {
             {
               name: 'Priya Sharma',
               role: 'Product Designer, Bengaluru',
-              text: 'I was spending ₹14K/month on food delivery without realizing. Architect showed me the leak in 2 minutes. Already saved ₹8K in the first month.',
+              text: 'I was spending ₹14K/month on food delivery without realizing. MyTrack showed me the leak in 2 minutes. Already saved ₹8K in the first month.',
               avatar: 'PS',
             },
             {
@@ -544,13 +544,13 @@ export function PricingPage() {
         <div className="absolute inset-0 bg-gradient-to-t from-primary/5 to-transparent rounded-3xl pointer-events-none" />
         <div className="relative z-10">
           <h2 className="font-headline text-4xl md:text-5xl font-extrabold text-on-surface mb-6">
-            Start building your<br />financial architecture.
+            Start building your<br />financial mytrackure.
           </h2>
           <p className="font-body text-on-surface-variant text-lg mb-10 max-w-xl mx-auto">
             Join 12,400+ Indians who stopped leaking money and started compounding wealth.
           </p>
           <button className="px-12 py-5 rounded-xl bg-gradient-to-r from-primary to-primary-fixed-dim text-on-primary font-headline font-bold text-lg shadow-[0_20px_50px_-10px_rgba(78,222,163,0.4)] hover:shadow-[0_25px_60px_-10px_rgba(78,222,163,0.5)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300">
-            Get Architect — ₹149/mo
+            Get MyTrack — ₹149/mo
           </button>
           <p className="font-body text-xs text-on-surface-variant mt-4">
             7-day full refund guarantee · Cancel anytime · No credit card required for free plan

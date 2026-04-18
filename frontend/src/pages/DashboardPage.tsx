@@ -69,7 +69,7 @@ export function DashboardPage() {
             {(copy as any).dashboard?.title || 'Financial Overview'}
           </h1>
           <p className="text-on-surface-variant font-body text-base mt-2 max-w-lg">
-            {(copy as any).dashboard?.subtitle || 'Your wealth architecture at a glance. Analyzing cash flow velocity and structural integrity.'}
+            {(copy as any).dashboard?.subtitle || 'Your wealth mytrackure at a glance. Analyzing cash flow velocity and structural integrity.'}
           </p>
         </div>
         <div className="flex items-center gap-4">
@@ -181,7 +181,7 @@ export function DashboardPage() {
         <div className="md:col-span-5 flex flex-col gap-6 md:gap-8">
           <div className="bg-surface-container-highest rounded-xl p-8 relative overflow-hidden shadow-[0_20px_40px_rgba(0,0,0,0.3)]">
             <div className="absolute right-0 top-0 w-1/2 h-full bg-gradient-to-l from-primary/5 to-transparent"></div>
-            <h3 className="font-headline text-lg font-bold text-on-surface mb-8">Architectural Score</h3>
+            <h3 className="font-headline text-lg font-bold text-on-surface mb-8">MyTrackural Score</h3>
             <div className="flex items-center gap-8">
               <div className="relative w-32 h-32 flex items-center justify-center">
                 <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
@@ -213,7 +213,7 @@ export function DashboardPage() {
           </div>
 
           <div className="bg-surface-container-low rounded-xl p-8 border border-outline-variant/15 shadow-[0_20px_40px_rgba(0,0,0,0.2)] flex-1">
-            <h3 className="font-headline text-lg font-bold text-on-surface mb-6">{(copy as any).dashboard?.allocationArch || 'Allocation Architecture'}</h3>
+            <h3 className="font-headline text-lg font-bold text-on-surface mb-6">{(copy as any).dashboard?.allocationArch || 'Allocation MyTrackure'}</h3>
             <div className="space-y-6">
               {topCats.map((c) => (
                 <div key={c.category}>

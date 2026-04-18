@@ -174,7 +174,7 @@ export const updateBadge = asyncHandler(async (req, res) => {
 })
 
 const tierSchema = z.object({
-  tier: z.enum(['starter', 'architect', 'strategist']),
+  tier: z.enum(['starter', 'mytrack', 'strategist']),
 })
 
 export const getTier = asyncHandler(async (req, res) => {

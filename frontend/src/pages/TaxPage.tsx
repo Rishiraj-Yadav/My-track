@@ -123,7 +123,7 @@ export function TaxPage() {
         <header className="mb-10">
           <p className="font-label text-xs font-bold text-secondary uppercase tracking-[0.25em] mb-3">Tax Optimizer</p>
           <h1 className="font-headline text-4xl md:text-5xl font-extrabold text-on-surface tracking-tight mb-4">
-            Tax Architecture
+            Tax MyTrackure
           </h1>
           <p className="font-body text-on-surface-variant text-lg max-w-2xl">
             Optimize deductions under 80C, 80D, 80CCD, and HRA. Compare old vs new tax regime.
