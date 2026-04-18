@@ -191,14 +191,13 @@ export function TopNav({ onLogout }: { onLogout?: () => void } = {}) {
               key={item.href}
               to={item.href}
               className={({ isActive }) =>
-                isActive || item.primary
+                isActive
                   ? 'side-rail__link side-rail__link--active'
                   : 'side-rail__link'
               }
             >
               <span
                 className="material-symbols-outlined"
-                style={item.primary ? { fontVariationSettings: "'FILL' 1" } : undefined}
               >
                 {item.icon}
               </span>

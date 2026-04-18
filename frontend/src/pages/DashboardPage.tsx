@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import {
   Area,
   AreaChart,
@@ -20,13 +20,11 @@ import {
   monthlyEquivalent,
 } from '../lib/finance'
 import { useAppStore } from '../store'
-import { useTier } from '../lib/subscription'
 import { useI18n } from '../i18n'
 
 export function DashboardPage() {
   const { copy } = useI18n()
   const { expenses, goals, sip, profile, whatIf } = useAppStore()
-  const { canAccess } = useTier()
   const totals = calculateMonthlyTotals(expenses)
   const saveRate =
     profile.monthlySalary > 0

@@ -19,7 +19,7 @@ import {
 import { useSimulator } from './SimulatorContext'
 
 export function DelayCostWidget() {
-  const { plan, events, activeMonth } = useSimulator()
+  const { plan, events } = useSimulator()
   const delayMonths = Math.max(plan.delayMonths ?? 0, 1)
 
   const nowTimeline = useMemo(
