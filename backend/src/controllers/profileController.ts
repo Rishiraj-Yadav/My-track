@@ -165,7 +165,7 @@ export const updateBadge = asyncHandler(async (req, res) => {
     return
   }
 
-  const badges = req.user.badges.map((badge) =>
+  const badges = req.user.badges.map((badge: any) =>
     badge.id === body.id ? { ...badge, unlocked: body.unlocked } : badge,
   )
   req.user.set('badges', badges)

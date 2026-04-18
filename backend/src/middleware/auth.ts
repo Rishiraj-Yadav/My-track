@@ -23,7 +23,7 @@ export const requireAuth: RequestHandler = async (req, _res, next) => {
       throw new HttpError(401, 'User not found')
     }
 
-    req.user = user
+    ;(req as any).user = user
     next()
   } catch (error) {
     next(error)
