@@ -5,7 +5,6 @@ import { AppShell, TopNav } from './components'
 import { DashboardPage } from './pages/DashboardPage'
 import { ExpensesPage } from './pages/ExpensesPage'
 import { GoalsPage } from './pages/GoalsPage'
-import { InsightsPage } from './pages/InsightsPage'
 import { LandingPage } from './pages/LandingPage'
 import { OnboardingPage } from './pages/OnboardingPage'
 import { ProfilePage } from './pages/ProfilePage'
@@ -78,7 +77,6 @@ function AppRoutes() {
             <Route path="/simulator" element={<SimulatorPage />} />
             <Route path="/goals" element={<GoalsPage />} />
             <Route path="/scenarios" element={<ScenariosPage />} />
-            <Route path="/insights" element={<InsightsPage />} />
             <Route path="/onboarding" element={<OnboardingPage />} />
             <Route path="/profile" element={<ProfilePage />} />
           </Routes>

@@ -1,121 +1,29 @@
-import { useEffect, useRef, useState } from 'react'
-import { ArrowRight, ArrowUpRight, Check, Zap } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { useMemo } from 'react'
 import {
   Area,
   AreaChart,
   CartesianGrid,
-  ComposedChart,
-  Legend,
-  Line,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from 'recharts'
-import { PageFrame, ProgressBar } from '../components'
+import { PageFrame } from '../components'
 import {
-  annualLeakage,
   buildSipGrowthSeries,
   calculateMonthlyTotals,
   calculateWhatIfImpact,
   formatCompactINR,
   formatINR,
-  futureValueMonthly,
-  futureValueWithDelay,
-  generateMonthlyTrend,
   groupExpensesByCategory,
   healthScore,
   monthlyEquivalent,
-  monthlySavingsRequired,
-  percentage,
-  scoreLabel,
 } from '../lib/finance'
 import { useAppStore } from '../store'
 
-/* ─── Helpers ─── */
-const tip = {
-  background: 'rgba(10,15,24,0.96)',
-  border: '1px solid rgba(255,255,255,0.1)',
-  borderRadius: 14,
-  color: '#fff',
-  fontSize: '0.84rem',
-}
-
-const catColor: Record<string, string> = {
-  'Food & Delivery': '#ff7f8a',
-  Subscriptions: '#f2c66d',
-  Transport: '#66b8ff',
-  'Digital & Cloud': '#a78bfa',
-  'Fitness & Health': '#7dff6c',
-  Shopping: '#f472b6',
-  Other: '#94a3b8',
-}
-
-const tagColor: Record<string, string> = {
-  essential: '#7dff6c',
-  avoidable: '#f2c66d',
-  impulse: '#ff7f8a',
-}
-
-/* ─── Animated bleed counter ─── */
-function BleedCounter({ rate }: { rate: number }) {
-  const [val, setVal] = useState(0)
-  const t0 = useRef(0)
-  const raf = useRef(0)
-
-  useEffect(() => {
-    t0.current = performance.now()
-    const loop = () => {
-      setVal(((performance.now() - t0.current) / 1000) * rate)
-      raf.current = requestAnimationFrame(loop)
-    }
-    raf.current = requestAnimationFrame(loop)
-    return () => cancelAnimationFrame(raf.current)
-  }, [rate])
-
-  return (
-    <div className="bleed">
-      <div className="bleed__top">
-        <span className="bleed__dot" />
-        <span className="bleed__label">money leaking right now</span>
-      </div>
-      <div className="bleed__rate">
-        {formatINR(rate, 3)}<span>/sec</span>
-      </div>
-      <div className="bleed__since">{formatINR(val, 2)} gone since you opened this page</div>
-    </div>
-  )
-}
-
-/* ─── Mini sparkline ─── */
-function Spark({ data, color, h = 40 }: { data: { v: number }[]; color: string; h?: number }) {
-  return (
-    <ResponsiveContainer width="100%" height={h}>
-      <AreaChart data={data} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
-        <defs>
-          <linearGradient id={`s${color.slice(1)}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={color} stopOpacity={0.35} />
-            <stop offset="100%" stopColor={color} stopOpacity={0} />
-          </linearGradient>
-        </defs>
-        <Area
-          type="monotone"
-          dataKey="v"
-          stroke={color}
-          fill={`url(#s${color.slice(1)})`}
-          strokeWidth={1.8}
-          dot={false}
-        />
-      </AreaChart>
-    </ResponsiveContainer>
-  )
-}
-
 export function DashboardPage() {
-  const { expenses, goals, sip, profile, whatIf, setWhatIf, badges, challenge } = useAppStore()
+  const { expenses, goals, sip, profile, whatIf } = useAppStore()
   const totals = calculateMonthlyTotals(expenses)
-  const perSec = totals.leakage / 30 / 24 / 3600
   const saveRate = profile.monthlySalary > 0
     ? ((profile.monthlySalary - totals.total) / profile.monthlySalary) * 100
     : 0
@@ -130,278 +38,263 @@ export function DashboardPage() {
   })
 
   const impact = calculateWhatIfImpact(whatIf, expenses, sip, profile, goals)
-  const trend = generateMonthlyTrend(profile.monthlySalary, totals.total, totals.leakage)
   const sipGrowth = buildSipGrowthSeries(impact.sipImpact, sip.annualReturn, sip.durationMonths)
   const cats = groupExpensesByCategory(expenses)
-  const proj = futureValueWithDelay(impact.sipImpact, sip.annualReturn, sip.durationMonths, sip.delayMonths)
 
   const leaks = expenses
     .filter((e) => e.tag !== 'essential')
     .map((e) => ({ name: e.name, mo: monthlyEquivalent(e.amount, e.frequency), tag: e.tag }))
     .sort((a, b) => b.mo - a.mo)
     .slice(0, 5)
-  const maxLeak = leaks[0]?.mo ?? 1
 
-  // Nudge rotation
-  const [nIdx, setNIdx] = useState(0)
-  useEffect(() => {
-    const t = setInterval(() => setNIdx((i) => (i + 1) % 3), 6000)
-    return () => clearInterval(t)
-  }, [])
-  const topLeak = leaks[0]
-  const nudges = topLeak
-    ? [
-        `Skip ${topLeak.name} → ${formatCompactINR(futureValueMonthly(topLeak.mo, 12, 60))} in 5 years.`,
-        `${topLeak.name} = ${formatCompactINR(topLeak.mo * 12)}/year. That's a trip to Goa.`,
-        `Redirect ${topLeak.name} to a SIP → ${formatCompactINR(futureValueMonthly(topLeak.mo, 12, 120))} in 10 years.`,
-      ]
-    : ['Add expenses to get insights.']
-
-  const g = goals[0]
+  // Top 3 Cats for Pie distribution approximation
+  const topCats = useMemo(() => {
+    const totalCatAmount = cats.reduce((sum, c) => sum + c.amount, 0)
+    const sorted = [...cats].sort((a,b) => b.amount - a.amount).slice(0, 3)
+    const colors = ['bg-primary', 'bg-secondary', 'bg-tertiary']
+    return sorted.map((c, i) => ({
+      ...c,
+      pct: totalCatAmount > 0 ? Math.round((c.amount / totalCatAmount) * 100) : 0,
+      colorClass: colors[i % colors.length]
+    }))
+  }, [cats])
 
   return (
     <PageFrame>
-      {/* ─── Header row: bleed + 3 stats ─── */}
-      <div className="d-header">
-        <div className="d-bleed-card">
-          <BleedCounter rate={perSec} />
-          <div className="d-bleed-meta">
-            <div>
-              <span className="d-meta-label">Monthly leakage</span>
-              <strong>{formatCompactINR(totals.leakage)}</strong>
+      <header className="mb-16 flex flex-col md:flex-row justify-between items-baseline gap-6">
+        <div>
+          <h1 className="font-headline text-4xl md:text-[3.5rem] font-bold tracking-tight text-on-surface leading-tight">Financial Overview</h1>
+          <p className="text-on-surface-variant font-body text-base mt-2 max-w-lg">
+            Your wealth architecture at a glance. Analyzing cash flow velocity and structural integrity.
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="text-sm font-medium text-outline uppercase tracking-widest mb-1">Monthly Salary</p>
+          <div className="font-headline text-5xl md:text-6xl font-extrabold text-on-surface tracking-tighter group hover:text-primary transition-colors duration-500">
+            {formatCompactINR(profile.monthlySalary).replace('₹', '$')}
+          </div>
+        </div>
+      </header>
+
+      {/* Bento Grid Layout */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 auto-rows-min">
+        
+        {/* Left Column (Wider) */}
+        <div className="md:col-span-7 flex flex-col gap-6 md:gap-8">
+          {/* KPI Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8">
+            {/* Total Spending */}
+            <div className="bg-surface-container-low rounded-xl p-8 relative overflow-hidden group border border-outline-variant/15 shadow-[0_20px_40px_rgba(0,0,0,0.2)]">
+              <div className="absolute -right-10 -top-10 w-40 h-40 bg-tertiary-fixed-dim/10 rounded-full blur-3xl group-hover:bg-tertiary-fixed-dim/20 transition-all duration-700"></div>
+              <div className="flex justify-between items-start mb-6 relative z-10">
+                <div>
+                  <h3 className="font-headline text-lg font-bold text-on-surface">Total Spending</h3>
+                  <p className="text-sm text-on-surface-variant font-medium mt-1">Trailing 30 Days</p>
+                </div>
+                <div className="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center text-tertiary">
+                  <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>credit_card</span>
+                </div>
+              </div>
+              <div className="relative z-10">
+                <p className="font-headline text-[2.5rem] font-extrabold text-on-surface leading-none mb-2">
+                  {formatCompactINR(totals.total).replace('₹', '$')}
+                </p>
+              </div>
             </div>
-            <div>
-              <span className="d-meta-label">10-year cost</span>
-              <strong className="text-warn">{formatCompactINR(annualLeakage(totals.leakage, 12, 10))}</strong>
+
+            {/* Savings Rate */}
+            <div className="bg-surface-container-low rounded-xl p-8 relative overflow-hidden group border border-outline-variant/15 shadow-[0_20px_40px_rgba(0,0,0,0.2)]">
+              <div className="absolute -right-10 -top-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl group-hover:bg-primary/20 transition-all duration-700"></div>
+              <div className="flex justify-between items-start mb-6 relative z-10">
+                <div>
+                  <h3 className="font-headline text-lg font-bold text-on-surface">Savings Rate</h3>
+                  <p className="text-sm text-on-surface-variant font-medium mt-1">Monthly Velocity</p>
+                </div>
+                <div className="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center text-primary">
+                  <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>savings</span>
+                </div>
+              </div>
+              <div className="relative z-10">
+                <p className="font-headline text-[2.5rem] font-extrabold text-on-surface leading-none mb-2">
+                  {Math.round(saveRate)}%
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* SIP Growth Line Chart */}
+          <div className="bg-surface-container-low rounded-xl p-8 border border-outline-variant/15 shadow-[0_20px_40px_rgba(0,0,0,0.2)] h-[440px] flex flex-col">
+            <div className="flex justify-between items-end mb-8">
+              <div>
+                <h3 className="font-headline text-xl font-bold text-on-surface mb-1">SIP Growth Trajectory</h3>
+                <p className="text-sm text-on-surface-variant font-medium">Systematic Investment Portfolio Performance</p>
+              </div>
+              <div className="flex gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-[#66b8ff]"></div>
+                  <span className="font-body text-xs text-on-surface-variant">Principal</span>
+                </div>
+                <div className="flex items-center gap-2 ml-2">
+                  <div className="w-3 h-3 rounded-full bg-[#35f0d2]"></div>
+                  <span className="font-body text-xs text-on-surface-variant">Returns</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="relative flex-grow w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={sipGrowth}>
+                  <defs>
+                    <linearGradient id="pg" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#66b8ff" stopOpacity={0.4} />
+                      <stop offset="100%" stopColor="#66b8ff" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="rg" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#35f0d2" stopOpacity={0.4} />
+                      <stop offset="100%" stopColor="#35f0d2" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
+                  <XAxis dataKey="year" stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 11 }} />
+                  <YAxis stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 11 }} tickFormatter={(v) => `${(v / 100000).toFixed(1)}L`} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#121416', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                    formatter={(value) => formatCompactINR(Number(value ?? 0))} 
+                  />
+                  <Area type="monotone" dataKey="principal" stackId="1" stroke="#66b8ff" fill="url(#pg)" strokeWidth={2} name="You put in" />
+                  <Area type="monotone" dataKey="returns" stackId="1" stroke="#35f0d2" fill="url(#rg)" strokeWidth={2} name="Market gives" />
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
           </div>
         </div>
 
-        <div className="d-stats-col">
-          <div className="d-stat">
-            <span className="d-meta-label">Salary</span>
-            <strong>{formatCompactINR(profile.monthlySalary)}</strong>
-            <Spark data={trend.map((p) => ({ v: p.income }))} color="#7dff6c" h={32} />
-          </div>
-          <div className="d-stat">
-            <span className="d-meta-label">Spent</span>
-            <strong>{formatCompactINR(totals.total)}</strong>
-            <Spark data={trend.map((p) => ({ v: p.spend }))} color="#ff7f8a" h={32} />
-          </div>
-          <div className="d-stat">
-            <span className="d-meta-label">Saved</span>
-            <strong className="text-up">{Math.round(saveRate)}%</strong>
-            <Spark data={trend.map((p) => ({ v: p.savings }))} color="#35f0d2" h={32} />
-          </div>
-        </div>
-
-        <div className="d-score-card">
-          <div className="d-score-ring" style={{
-            background: `conic-gradient(var(--teal) ${score * 3.6}deg, rgba(255,255,255,0.06) 0deg)`,
-          }}>
-            <div className="d-score-inner">
-              <strong>{score}</strong>
-              <span>{scoreLabel(score)}</span>
+        {/* Right Column (Narrower) */}
+        <div className="md:col-span-5 flex flex-col gap-6 md:gap-8">
+          {/* Financial Health Score */}
+          <div className="bg-surface-container-highest rounded-xl p-8 relative overflow-hidden shadow-[0_20px_40px_rgba(0,0,0,0.3)]">
+            <div className="absolute right-0 top-0 w-1/2 h-full bg-gradient-to-l from-primary/5 to-transparent"></div>
+            <h3 className="font-headline text-lg font-bold text-on-surface mb-8">Architectural Score</h3>
+            <div className="flex items-center gap-8">
+              <div className="relative w-32 h-32 flex items-center justify-center">
+                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" fill="none" r="45" stroke="#1a1c1e" strokeWidth="6"></circle>
+                  <circle 
+                    className="drop-shadow-[0_0_10px_rgba(78,222,163,0.5)]" 
+                    cx="50" cy="50" fill="none" r="45" stroke="#4edea3" 
+                    strokeDasharray="283" 
+                    strokeDashoffset={283 - (283 * score) / 100} 
+                    strokeLinecap="round" strokeWidth="6"
+                  ></circle>
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="font-headline text-4xl font-black text-on-surface">{score}</span>
+                </div>
+              </div>
+              <div>
+                <p className="text-lg font-bold text-primary mb-1">Health rating</p>
+                <p className="text-sm text-on-surface-variant font-medium leading-relaxed">
+                  Based on your savings rate, leakage, and goal progress.
+                </p>
+              </div>
             </div>
           </div>
-          <span className="d-meta-label" style={{ textAlign: 'center', marginTop: 8 }}>Health Score</span>
+
+          {/* Category Distribution */}
+          <div className="bg-surface-container-low rounded-xl p-8 border border-outline-variant/15 shadow-[0_20px_40px_rgba(0,0,0,0.2)] flex-1">
+            <h3 className="font-headline text-lg font-bold text-on-surface mb-6">Allocation Architecture</h3>
+            <div className="space-y-6">
+              {topCats.map((c) => (
+                <div key={c.category}>
+                  <div className="flex justify-between text-sm font-bold mb-2">
+                    <span className="flex items-center gap-2 text-on-surface">
+                      <div className={`w-2 h-2 rounded-full ${c.colorClass}`}></div> {c.category}
+                    </span>
+                    <span className="text-on-surface">{c.pct}%</span>
+                  </div>
+                  <div className="w-full bg-surface-container-highest rounded-full h-2 overflow-hidden">
+                    <div className={`${c.colorClass} h-full rounded-full`} style={{ width: `${c.pct}%` }}></div>
+                  </div>
+                </div>
+              ))}
+              {topCats.length === 0 && (
+                <p className="text-sm text-on-surface-variant">No expenses recorded yet.</p>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* ─── Main split: big chart + sidebar ─── */}
-      <div className="d-main">
-        <div className="d-chart-card">
-          <h3>Income vs Expenses</h3>
-          <p className="d-muted">6 months · all figures monthly</p>
-          <ResponsiveContainer width="100%" height={300}>
-            <ComposedChart data={trend}>
-              <defs>
-                <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#35f0d2" stopOpacity={0.25} />
-                  <stop offset="100%" stopColor="#35f0d2" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
-              <XAxis dataKey="month" stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 12 }} />
-              <YAxis stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 12 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-              <Tooltip contentStyle={tip} formatter={(value) => formatCompactINR(Number(value ?? 0))} />
-              <Legend iconType="circle" wrapperStyle={{ fontSize: '0.82rem' }} />
-              <Area type="monotone" dataKey="savings" stroke="#35f0d2" fill="url(#sg)" strokeWidth={2} name="Savings" />
-              <Line type="monotone" dataKey="income" stroke="#7dff6c" strokeWidth={2.5} dot={false} name="Income" />
-              <Line type="monotone" dataKey="spend" stroke="#ff7f8a" strokeWidth={2.5} dot={false} name="Spending" />
-              <Line type="monotone" dataKey="leakage" stroke="#f2c66d" strokeWidth={1.8} strokeDasharray="5 3" dot={false} name="Leakage" />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="d-sidebar">
-          {/* What-if */}
-          <div className="d-whatif">
-            <h3>What if…</h3>
-            <input
-              className="text-input"
-              value={whatIf}
-              onChange={(e) => setWhatIf(e.target.value)}
-              placeholder='"stop swiggy" · "add ₹3000 SIP"'
-            />
-            {whatIf && (
-              <div className="d-whatif-result">
-                <p className="d-muted">{impact.label}</p>
-                <div className="d-deltas">
-                  <div>
-                    <span>Save</span>
-                    <strong className="text-up">+{formatCompactINR(impact.monthlySavingsChange)}/mo</strong>
+      {/* Lower Section: Leakage & Goals */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 mt-6 md:gap-8 md:mt-8">
+        
+        {/* Top Wasteful Expenses */}
+        <div className="bg-surface-container-low rounded-xl p-8 border border-outline-variant/15 shadow-[0_20px_40px_rgba(0,0,0,0.2)] flex flex-col">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h3 className="font-headline text-lg font-bold text-on-surface">Capital Leakage</h3>
+              <p className="text-sm text-on-surface-variant font-medium">Identified inefficiencies</p>
+            </div>
+            <div className="w-10 h-10 rounded-full bg-tertiary-fixed-dim/10 flex items-center justify-center text-tertiary">
+              <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>warning</span>
+            </div>
+          </div>
+          <div className="space-y-4 flex-grow overflow-y-auto max-h-64 pr-2">
+            {leaks.map((l) => (
+              <div key={l.name} className="flex items-center justify-between p-4 rounded-lg hover:bg-surface-container-highest transition-colors group cursor-pointer border border-transparent hover:border-outline-variant/15">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-surface flex items-center justify-center text-outline group-hover:text-tertiary transition-colors">
+                    <span className="material-symbols-outlined">payments</span>
                   </div>
                   <div>
-                    <span>Score</span>
-                    <strong>{impact.healthScoreBefore} → <span className="text-up">{impact.healthScoreAfter}</span></strong>
-                  </div>
-                  <div>
-                    <span>Corpus</span>
-                    <strong className="text-up">+{formatCompactINR(impact.corpusAfter - impact.corpusBefore)}</strong>
+                    <p className="font-bold text-sm text-on-surface">{l.name}</p>
+                    <p className="text-xs text-on-surface-variant">{l.tag} expense</p>
                   </div>
                 </div>
+                <p className="font-headline font-bold text-tertiary">-${formatINR(l.mo).replace('₹', '')}</p>
               </div>
+            ))}
+            {leaks.length === 0 && (
+              <p className="text-sm text-on-surface-variant">No leaks found. Great job!</p>
             )}
           </div>
-
-          {/* Categories */}
-          <div className="d-cats">
-            <h3>Where it goes</h3>
-            {cats.map((c) => (
-              <div key={c.category} className="d-cat-row">
-                <span className="d-cat-dot" style={{ background: catColor[c.category] || '#94a3b8' }} />
-                <span className="d-cat-name">{c.category}</span>
-                <div className="d-cat-bar">
-                  <div style={{ width: `${c.percentage}%`, background: catColor[c.category] || '#94a3b8' }} />
-                </div>
-                <span className="d-cat-amt">{formatCompactINR(c.amount)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ─── Second row: SIP chart + Leaks ─── */}
-      <div className="d-row2">
-        <div className="d-chart-card d-chart-card--sip">
-          <h3>SIP compounding</h3>
-          <p className="d-muted">{formatCompactINR(impact.sipImpact)}/mo at {sip.annualReturn}% for {Math.round(sip.durationMonths / 12)}Y</p>
-          <ResponsiveContainer width="100%" height={240}>
-            <AreaChart data={sipGrowth}>
-              <defs>
-                <linearGradient id="pg" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#66b8ff" stopOpacity={0.4} />
-                  <stop offset="100%" stopColor="#66b8ff" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="rg" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#35f0d2" stopOpacity={0.4} />
-                  <stop offset="100%" stopColor="#35f0d2" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
-              <XAxis dataKey="year" stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 11 }} />
-              <YAxis stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 11 }} tickFormatter={(v) => `${(v / 100000).toFixed(1)}L`} />
-              <Tooltip contentStyle={tip} formatter={(value) => formatCompactINR(Number(value ?? 0))} />
-              <Area type="monotone" dataKey="principal" stackId="1" stroke="#66b8ff" fill="url(#pg)" strokeWidth={1.5} name="You put in" />
-              <Area type="monotone" dataKey="returns" stackId="1" stroke="#35f0d2" fill="url(#rg)" strokeWidth={1.5} name="Market gives" />
-            </AreaChart>
-          </ResponsiveContainer>
-          <div className="d-sip-row">
-            <div><span className="d-muted">Start now</span><strong>{formatCompactINR(proj.startingNow)}</strong></div>
-            <div><span className="d-muted">Delay {sip.delayMonths}mo</span><strong className="text-warn">{formatCompactINR(proj.startingLater)}</strong></div>
-            <div><span className="d-muted">You lose</span><strong className="text-red">{formatCompactINR(proj.delayCost)}</strong></div>
-          </div>
         </div>
 
-        <div className="d-leaks-card">
-          <h3>Top leaks</h3>
-          <p className="d-muted">Avoidable & impulse expenses ranked by cost</p>
-          <div className="d-leak-list">
-            {leaks.map((l, i) => (
-              <div key={l.name} className="d-leak">
-                <span className="d-leak-rank">{i + 1}</span>
-                <div className="d-leak-mid">
-                  <strong>{l.name}</strong>
-                  <div className="d-leak-bar">
-                    <div style={{ width: `${(l.mo / maxLeak) * 100}%`, background: tagColor[l.tag] }} />
+        {/* Goal Progress */}
+        <div className="bg-surface-container-low rounded-xl p-8 border border-outline-variant/15 shadow-[0_20px_40px_rgba(0,0,0,0.2)] relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-secondary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4"></div>
+          <h3 className="font-headline text-lg font-bold text-on-surface mb-8 relative z-10">Structural Goals</h3>
+          <div className="relative z-10 space-y-8 flex-grow overflow-y-auto max-h-64 pr-2">
+            {goals.map((g, i) => {
+              const pct = (g.savedAmount / Math.max(g.targetAmount, 1)) * 100
+              const progressColor = i % 2 === 0 ? "secondary" : "primary"
+              return (
+                <div key={g.id}>
+                  <div className="flex justify-between items-end mb-3">
+                    <div>
+                      <p className="font-bold text-sm text-on-surface mb-1">{g.name}</p>
+                      <p className={`font-headline text-2xl font-extrabold text-${progressColor}`}>
+                        ${formatINR(g.savedAmount).replace('₹', '')}
+                      </p>
+                    </div>
+                    <span className={`text-sm font-bold text-${progressColor} bg-${progressColor}/10 px-3 py-1 rounded-full`}>
+                      {Math.round(pct)}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-surface-container-highest rounded-full h-3 overflow-hidden border border-outline-variant/10">
+                    <div 
+                      className={`bg-gradient-to-r from-${progressColor}-fixed-dim to-${progressColor} h-full rounded-full`} 
+                      style={{ width: `${Math.min(pct, 100)}%` }}>
+                    </div>
                   </div>
                 </div>
-                <span className="d-leak-amt">{formatCompactINR(l.mo)}<small>/mo</small></span>
-              </div>
-            ))}
-          </div>
-          <div className="d-leak-total">
-            <span>10-year compounded cost</span>
-            <strong>{formatCompactINR(annualLeakage(totals.leakage, 12, 10))}</strong>
+              )
+            })}
+            {goals.length === 0 && (
+              <p className="text-sm text-on-surface-variant">No goals established yet.</p>
+            )}
           </div>
         </div>
-      </div>
-
-      {/* ─── Bottom: Spend split + Goal + Streak ─── */}
-      <div className="d-bottom">
-        <div className="d-spend-card">
-          <h3>Monthly breakdown</h3>
-          <div className="d-spend-bar">
-            <div style={{ width: `${percentage(totals.essential, totals.total)}%` }} className="bg-green" />
-            <div style={{ width: `${percentage(totals.avoidable, totals.total)}%` }} className="bg-amber" />
-            <div style={{ width: `${percentage(totals.impulse, totals.total)}%` }} className="bg-red" />
-          </div>
-          <div className="d-spend-leg">
-            <span><i className="bg-green" /> Essential {formatCompactINR(totals.essential)}</span>
-            <span><i className="bg-amber" /> Avoidable {formatCompactINR(totals.avoidable)}</span>
-            <span><i className="bg-red" /> Impulse {formatCompactINR(totals.impulse)}</span>
-          </div>
-        </div>
-
-        {g ? (
-          <div className="d-goal-card">
-            <div className="d-goal-head">
-              <h3>{g.name}</h3>
-              <span className="d-muted">{Math.round((g.savedAmount / Math.max(g.targetAmount, 1)) * 100)}% done</span>
-            </div>
-            <ProgressBar value={(g.savedAmount / Math.max(g.targetAmount, 1)) * 100} tone="positive" />
-            <div className="d-goal-row">
-              <div><span className="d-muted">Saved</span><strong>{formatCompactINR(g.savedAmount)}</strong></div>
-              <div><span className="d-muted">Target</span><strong>{formatCompactINR(g.targetAmount)}</strong></div>
-              <div><span className="d-muted">Need/mo</span><strong>{formatCompactINR(monthlySavingsRequired(g.targetAmount, g.targetDate, g.savedAmount))}</strong></div>
-            </div>
-          </div>
-        ) : (
-          <div className="d-goal-card">
-            <h3>No goals yet</h3>
-            <p className="d-muted">Set a goal to track progress.</p>
-            <Link to="/goals" className="button button--secondary" style={{ marginTop: 12 }}>
-              Create goal <ArrowRight size={14} />
-            </Link>
-          </div>
-        )}
-
-        <div className="d-streak-card">
-          <div className="d-streak-num">18</div>
-          <span className="d-muted">day savings streak</span>
-          <div className="d-badges-mini">
-            {badges.filter((b) => b.unlocked).slice(0, 2).map((b) => (
-              <span key={b.id} className="d-badge"><Check size={12} /> {b.name}</span>
-            ))}
-          </div>
-          {challenge && (
-            <div className="d-challenge">
-              <Zap size={13} /> {challenge.name} · {challenge.daysLeft}d left
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ─── Nudge ─── */}
-      <div className="d-nudge">
-        <div className="d-nudge-text">
-          <span className="d-nudge-icon">💡</span>
-          <p>{nudges[nIdx % nudges.length]}</p>
-        </div>
-        <Link to="/simulator" className="d-nudge-link">
-          Simulate <ArrowUpRight size={14} />
-        </Link>
       </div>
     </PageFrame>
   )

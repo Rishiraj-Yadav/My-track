@@ -1,356 +1,133 @@
-import { useEffect, useRef, useState } from 'react'
-import { ArrowRight, WandSparkles } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { Card, CTARow, PageFrame, Pill, Reveal, SectionHeader, StatCard } from '../components'
-import { ModelViewer } from '../components/ModelViewer'
-import {
-  annualLeakage,
-  calculateMonthlyTotals,
-  formatCompactINR,
-  formatINR,
-  futureValueMonthly,
-  healthScore,
-  parseWhatIfCommand,
-  percentage,
-  scoreLabel,
-} from '../lib/finance'
+import { PageFrame } from '../components'
 import { useAppStore } from '../store'
+import { calculateMonthlyTotals, formatCompactINR } from '../lib/finance'
 
 export function LandingPage() {
-  const { expenses, goals, sip, profile, whatIf } = useAppStore()
+  const { expenses } = useAppStore()
   const totals = calculateMonthlyTotals(expenses)
-  const bleedPerSecond = totals.leakage / 30 / 24 / 3600
-  const future10Y = annualLeakage(totals.leakage, 12, 10)
-  const health = healthScore({
-    salary: profile.monthlySalary,
-    leakage: totals.leakage,
-    sipAmount: sip.monthlyAmount,
-    goalsOnTrack: goals.some((goal) => goal.savedAmount >= goal.targetAmount * 0.35),
-    streak: 12,
-    subscriptions: expenses.filter((expense) => expense.name.toLowerCase().includes('ott')).length,
-  })
-  const parsed = parseWhatIfCommand(whatIf, expenses, sip.monthlyAmount)
-
-  const t0 = useRef(0)
-  const [wealthFactor, setWealthFactor] = useState(0)
-  useEffect(() => {
-    t0.current = performance.now()
-    const id = window.setInterval(() => {
-      const elapsed = (performance.now() - t0.current) / 1000
-      setWealthFactor(Math.min(elapsed / 90, 1))
-    }, 500)
-    return () => window.clearInterval(id)
-  }, [])
+  const leakMonthly = totals.leakage
 
   return (
     <PageFrame>
-      <section className="hero section">
-        <div className="hero__copy">
-          <Reveal>
-            <Pill tone="teal">Automated money intelligence</Pill>
-          </Reveal>
-          <Reveal delay={0.04}>
-            <h1>Spot leaks. Stop wasting. Build wealth.</h1>
-          </Reveal>
-          <Reveal delay={0.08}>
-            <p className="hero__lede">
-              We turn bad spending habits into clear financial warnings so you can redirect your money and watch it grow.
-            </p>
-          </Reveal>
-          <Reveal delay={0.12}>
-            <CTARow
-              primary={{ label: 'Start Saving', to: '/onboarding' }}
-              secondary={{ label: 'View Dashboard', to: '/dashboard' }}
-            />
-          </Reveal>
-          <Reveal delay={0.16}>
-            <div className="hero__ticker card">
-              <div className="hero__ticker-top">
-                <span>Live money bleeding</span>
-                <Pill tone="warning">Running now</Pill>
-              </div>
-              <strong>{formatINR(bleedPerSecond, 3)}</strong>
-              <p>per second from avoidable and impulse habits</p>
-            </div>
-          </Reveal>
-          <Reveal delay={0.2}>
-            <div className="hero__ask card">
-              <span className="hero__ask-label">
-                <WandSparkles size={14} />
-                Ask AI-style what if
-              </span>
-              <div className="hero__ask-input">
-                <span>What if I stop ordering Swiggy twice a week?</span>
-                <ArrowRight size={16} />
-              </div>
-              <p>{parsed.label}</p>
-            </div>
-          </Reveal>
-        </div>
-
-        <div className="hero__visual">
-          <ModelViewer
-            wealthFactor={wealthFactor}
-            className={wealthFactor > 0.5 ? 'model-viewer-wrap--hot' : ''}
-          />
-        </div>
-      </section>
-
-      <section className="section section--thin">
-        <div className="trust-strip">
-          <span>Built for students</span>
-          <span>young professionals</span>
-          <span>first-time investors</span>
-          <span>wealth builders</span>
-          <span>privacy-first</span>
-        </div>
-      </section>
-
-      <section className="section">
-        <SectionHeader
-          eyebrow="Bento overview"
-          title="Spot leaks. Simulate outcomes. Prove the upside."
-          description="Categorize spending, redirect waste, and start investing."
-          align="center"
-        />
-        <div className="bento-grid">
-          {[
-            ['Live bleed ticker', '₹/second updates tied to avoidable habits'],
-            ['Classification engine', 'Essential, avoidable, or impulse in one dropdown'],
-            ['Future cost', 'See the 10-year price tag of today’s behavior'],
-            ['What-if simulator', 'Type a sentence and recalculate instantly'],
-            ['SIP redirection', 'Send leakage straight into compounding'],
-            ['Financial health', 'A score that moves as habits improve'],
-            ['Goals tracking', 'Priority, deadline, and monthly savings'],
-            ['Scenario comparison', 'Run side-by-side habit outcomes'],
-          ].map((item, index) => (
-            <Reveal key={item[0]} delay={index * 0.04}>
-              <Card className={`bento-card bento-card--${index % 4}`}>
-                <span className="bento-card__index">0{index + 1}</span>
-                <h3>{item[0]}</h3>
-                <p>{item[1]}</p>
-              </Card>
-            </Reveal>
-          ))}
-        </div>
-      </section>
-
-      <section className="section section--split">
-        <div>
-          <SectionHeader
-            eyebrow="How it works"
-            title="Four simple steps."
-            description="Get running in seconds. Turn raw data into financial goals."
-          />
-        </div>
-        <div className="step-stack">
-          {[
-            ['Add profile and salary', 'Set name, PIN, income, and starting savings.'],
-            ['Tag expenses', 'Drop every recurring habit into a clear expense class.'],
-            ['Explore what-ifs', 'Use natural-language prompts to test one habit change.'],
-            ['Redirect the leak', 'Move wasted money into SIPs and goals instantly.'],
-          ].map((step, index) => (
-            <Reveal key={step[0]} delay={index * 0.05}>
-              <Card className="step-card">
-                <div className="step-card__number">0{index + 1}</div>
-                <h3>{step[0]}</h3>
-                <p>{step[1]}</p>
-              </Card>
-            </Reveal>
-          ))}
-        </div>
-      </section>
-
-      <section className="section">
-        <SectionHeader eyebrow="Product preview" title="Track, simulate, and grow your wealth in one place." align="center" />
-        <div className="preview-grid">
-          <PreviewPanel title="Dashboard" tone="teal">
-            <MiniDashboardPreview />
-          </PreviewPanel>
-          <PreviewPanel title="Expenses" tone="red">
-            <MiniExpensesPreview />
-          </PreviewPanel>
-          <PreviewPanel title="Simulator" tone="green">
-            <MiniSimulatorPreview />
-          </PreviewPanel>
-          <PreviewPanel title="Insights" tone="blue">
-            <MiniInsightsPreview />
-          </PreviewPanel>
-        </div>
-      </section>
-
-      <section className="section section--metrics">
-        <SectionHeader eyebrow="Outcome" title="Real metrics in seconds." align="center" />
-        <div className="metrics-grid">
-          <StatCard label="₹ saved from leaks" value={formatCompactINR(totals.leakage * 8)} note="annualized from current behavior" />
-          <StatCard label="10-year leak cost" value={formatCompactINR(future10Y)} note="cost of doing nothing" />
-          <StatCard label="Corpus gain from starting now" value={formatCompactINR(futureValueMonthly(sip.monthlyAmount, sip.annualReturn, 120))} note="10-year compounding" />
-          <StatCard label="Health score improvement" value={`${health} / 100`} note={`classified as ${scoreLabel(health)}`} />
-          <StatCard label="Avoidable spend reduced" value={`${Math.round(percentage(totals.leakage, totals.total))}%`} note="share of monthly outflow" />
-        </div>
-      </section>
-
-      <section className="section">
-        <SectionHeader eyebrow="Personas" title="Personalized spending insights." align="center" />
-        <div className="persona-grid">
-          {[
-            { title: 'Impulse spender', copy: 'Avoidable spend above 30% of salary.' },
-            { title: 'SIP neglector', copy: 'No monthly investment set yet.' },
-            { title: 'Disciplined saver', copy: 'Goals are on track and waste is low.' },
-            { title: 'Subscription hoarder', copy: 'Too many recurring services in the stack.' },
-          ].map((persona, index) => (
-            <Reveal key={persona.title} delay={index * 0.04}>
-              <Card className="persona-card">
-                <Pill tone={index === 0 ? 'warning' : index === 1 ? 'teal' : 'positive'}>Insight</Pill>
-                <h3>{persona.title}</h3>
-                <p>{persona.copy}</p>
-              </Card>
-            </Reveal>
-          ))}
-        </div>
-      </section>
-
-      <section className="section">
-        <SectionHeader eyebrow="Testimonials" title="Trusted by smart spenders." align="center" />
-        <div className="testimonial-grid">
-          {[
-            ['“The live bleed ticker immediately helped me spot where my salary was disappearing.”', 'Priya, Software Engineer'],
-            ['“The what-if simulator felt like magic. I finally see how small choices compound.”', 'Kabir, Marketing Director'],
-            ['“Expense Autopsy transformed my finances from overwhelming to completely managed.”', 'Meera, First-time Investor'],
-          ].map((quote, index) => (
-            <Reveal key={quote[0]} delay={index * 0.05}>
-              <Card className="testimonial-card">
-                <p>{quote[0]}</p>
-                <span>{quote[1]}</span>
-              </Card>
-            </Reveal>
-          ))}
-        </div>
-      </section>
-
-      <section className="section">
-        <SectionHeader eyebrow="Pricing Plans" title="Simple pricing that grows with you." description="Clear and honest plans." align="center" />
-        <div className="pricing-grid">
-          <PricingCard name="Basic" price="Free" features={['Expense tracking', 'Basic analytics', 'Goal setting']} />
-          <PricingCard name="Pro" price="₹499" features={['What-if simulator', 'Custom scenarios', 'Priority goal tracking']} highlight />
-          <PricingCard name="Premium" price="₹999" features={['Advanced routing', 'AI Insights', '1-on-1 advisor logic']} />
-        </div>
-      </section>
-
-      <section className="section">
-        <SectionHeader eyebrow="FAQ" title="Frequently Asked Questions." align="center" />
-        <div className="faq-list">
-          {[
-            ['How is leakage calculated?', 'We sum avoidable and impulse expenses, convert to monthly equivalents, and project the future cost with a compound-growth formula.'],
-            ['Does data stay local?', 'Yes. All your financial data is stored locally and fully encrypted. We never share it.'],
-            ['How does the what-if input work?', 'A lightweight regex parser matches a few common commands like stop, add SIP, or delay SIP.'],
-            ['Is this beginner-friendly?', 'Very. The onboarding keeps the first session to profile, expenses, goals, and one SIP decision.'],
-            ['How are SIP projections estimated?', 'They use standard monthly compounding with a configurable annual return rate.'],
-          ].map((faq, index) => (
-            <Reveal key={faq[0]} delay={index * 0.03}>
-              <Card className="faq-card">
-                <h3>{faq[0]}</h3>
-                <p>{faq[1]}</p>
-              </Card>
-            </Reveal>
-          ))}
-        </div>
-      </section>
-
-      <section className="section final-cta">
-        <Card className="final-cta__card">
-          <Pill tone="teal">Get Started Today</Pill>
-          <h2>Start saving today.</h2>
-          <p>
-            Spot leaks, run what-ifs, and grow your money instantly.
+      {/* Hero Section */}
+      <section className="relative min-h-[85vh] flex flex-col md:flex-row items-center justify-between gap-12 mb-32 -mt-10">
+        <div className="w-full md:w-3/5 z-10 flex flex-col items-start gap-8 relative">
+          {/* Ambient Glow Behind Text */}
+          <div className="absolute -left-20 top-0 w-96 h-96 bg-primary/10 rounded-full blur-[100px] pointer-events-none"></div>
+          
+          <h1 className="font-headline font-extrabold text-5xl md:text-7xl leading-tight text-on-surface">
+            See what your money decisions <span className="text-primary block mt-2">really cost.</span>
+          </h1>
+          
+          <p className="font-body text-on-surface-variant text-lg md:text-xl max-w-xl leading-relaxed">
+            Move beyond simple tracking. The Financial Architect reveals the true trajectory of your wealth with high-fidelity simulations.
           </p>
-          <CTARow
-            primary={{ label: 'Start your expense autopsy', to: '/onboarding' }}
-            secondary={{ label: 'Jump to dashboard', to: '/dashboard' }}
-          />
-        </Card>
+          
+          <div className="flex flex-col sm:flex-row gap-6 mt-4 w-full sm:w-auto">
+            <Link to="/onboarding" className="bg-gradient-to-br from-primary to-[#008f62] text-on-primary font-headline font-bold text-lg px-10 py-5 rounded-xl shadow-[0_20px_40px_rgba(78,222,163,0.2)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 text-center">
+              Start Tracking
+            </Link>
+            <Link to="/dashboard" className="bg-surface-container-highest/50 border border-outline-variant/15 text-on-surface font-headline font-bold text-lg px-10 py-5 rounded-xl hover:bg-surface-container-highest transition-colors duration-300 flex items-center justify-center gap-3">
+              <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>play_circle</span>
+              View Gallery
+            </Link>
+          </div>
+        </div>
+
+        {/* Hero Visual - 3D Mockup Stand-in */}
+        <div className="w-full md:w-2/5 relative h-[500px] flex items-center justify-center">
+          {/* Layered Glass Cards mimicking a 3D interface */}
+          <div className="absolute top-10 right-0 w-80 h-96 bg-surface-bright/40 backdrop-blur-2xl rounded-xl border border-outline-variant/15 shadow-[0_30px_60px_rgba(0,0,0,0.5)] transform rotate-3 translate-x-4 flex flex-col p-6 z-20">
+            <div className="text-on-surface-variant text-sm font-label mb-2">Projected Net Worth</div>
+            <div className="text-primary font-headline font-extrabold text-4xl mb-8">$2.4M</div>
+            <div className="flex-grow flex items-end gap-3 opacity-80">
+              <div className="w-1/6 bg-surface-variant rounded-t-sm h-1/4"></div>
+              <div className="w-1/6 bg-surface-variant rounded-t-sm h-2/4"></div>
+              <div className="w-1/6 bg-primary/40 rounded-t-sm h-3/4"></div>
+              <div className="w-1/6 bg-primary/60 rounded-t-sm h-[85%]"></div>
+              <div className="w-1/6 bg-primary rounded-t-sm h-full relative shadow-[0_0_20px_rgba(78,222,163,0.4)]">
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-on-surface rounded-full"></div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="absolute bottom-0 left-10 w-72 h-48 bg-surface-container-lowest/80 backdrop-blur-xl rounded-xl border border-outline-variant/10 shadow-[0_20px_40px_rgba(0,0,0,0.6)] transform -rotate-2 -translate-x-8 flex flex-col p-6 z-30">
+            <div className="flex justify-between items-center mb-4">
+              <div className="text-on-surface-variant font-label text-sm">Monthly Leakage</div>
+              <span className="material-symbols-outlined text-tertiary">warning</span>
+            </div>
+            <div className="text-tertiary font-headline font-bold text-2xl mb-1">${formatCompactINR(leakMonthly).replace('₹', '')}</div>
+            <div className="text-on-surface-variant text-xs">Subscription overlap detected</div>
+          </div>
+        </div>
+      </section>
+
+      {/* Feature Section: Bento Grid */}
+      <section className="mb-32">
+        <h2 className="font-headline font-bold text-3xl text-on-surface mb-12">The Blueprint</h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Feature 1: Expense Tracking */}
+          <div className="md:col-span-2 bg-surface-container-low rounded-xl p-10 flex flex-col justify-between relative overflow-hidden group hover:bg-surface-container-high transition-colors duration-500 min-h-[400px]">
+            <div className="z-10 w-full md:w-1/2">
+              <span className="material-symbols-outlined text-primary mb-6 text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>payments</span>
+              <h3 className="font-headline font-bold text-2xl text-on-surface mb-4">Granular Expense Tracking</h3>
+              <p className="font-body text-on-surface-variant leading-relaxed">
+                Monitor cash flow with precision. Our categorizations go beyond standard labels to reveal the true utility of your spending.
+              </p>
+            </div>
+            {/* Decorative Visual */}
+            <div className="absolute right-[-10%] bottom-[-10%] w-[60%] h-[80%] bg-surface-container-highest rounded-xl transform -rotate-6 border border-outline-variant/15 p-6 flex flex-col gap-4 shadow-[0_20px_40px_rgba(0,0,0,0.4)] opacity-50 group-hover:opacity-100 transition-opacity duration-500">
+              <div className="h-12 bg-surface-variant rounded-md w-full"></div>
+              <div className="h-12 bg-surface-variant rounded-md w-4/5"></div>
+              <div className="h-12 bg-tertiary/20 rounded-md w-full border border-tertiary/30"></div>
+            </div>
+          </div>
+
+          {/* Feature 2: Scenario Simulation */}
+          <div className="md:col-span-1 bg-surface-container-highest rounded-xl p-10 flex flex-col justify-between relative overflow-hidden group min-h-[400px]">
+            <div className="absolute inset-0 bg-gradient-to-b from-secondary/5 to-transparent pointer-events-none"></div>
+            <div className="z-10">
+              <span className="material-symbols-outlined text-secondary mb-6 text-4xl">query_stats</span>
+              <h3 className="font-headline font-bold text-2xl text-on-surface mb-4">Scenario Lab</h3>
+              <p className="font-body text-on-surface-variant leading-relaxed">
+                Simulate the future before you commit. Test property purchases, career changes, or market downturns.
+              </p>
+            </div>
+            {/* Decorative Visual */}
+            <div className="mt-8 flex items-center justify-center">
+              <div className="w-full h-2 bg-surface-variant rounded-full relative">
+                <div className="absolute left-0 top-0 h-full w-2/3 bg-secondary rounded-full shadow-[0_0_10px_rgba(233,195,73,0.3)]"></div>
+                <div className="absolute left-2/3 top-1/2 transform -translate-y-1/2 -translate-x-1/2 w-6 h-6 bg-surface-bright rounded-full border-2 border-secondary shadow-lg"></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Feature 3: Goal Planning */}
+          <div className="md:col-span-3 bg-surface-container-lowest border border-outline-variant/10 rounded-xl p-10 flex flex-col md:flex-row items-center justify-between gap-12 group hover:border-outline-variant/30 transition-colors duration-500">
+            <div className="w-full md:w-1/2 flex flex-col gap-6">
+              <span className="material-symbols-outlined text-primary text-4xl">track_changes</span>
+              <h3 className="font-headline font-bold text-3xl text-on-surface">Architectural Goal Planning</h3>
+              <p className="font-body text-on-surface-variant text-lg">
+                Structure your aspirations into achievable milestones. Set timelines, allocate capital, and watch the foundation build.
+              </p>
+            </div>
+            <div className="w-[200px] h-[200px] flex justify-end">
+              {/* Abstract rings representing goals */}
+              <div className="relative w-full h-full">
+                <div className="absolute inset-4 rounded-full border-4 border-surface-variant"></div>
+                <div className="absolute inset-4 rounded-full border-4 border-primary border-t-transparent border-r-transparent transform rotate-45"></div>
+                <div className="absolute inset-12 rounded-full border-4 border-surface-variant"></div>
+                <div className="absolute inset-12 rounded-full border-4 border-secondary border-b-transparent transform -rotate-12"></div>
+                <div className="absolute inset-0 flex items-center justify-center font-headline font-bold text-2xl text-on-surface">
+                    68%
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
     </PageFrame>
-  )
-}
-
-function PreviewPanel({
-  title,
-  tone,
-  children,
-}: {
-  title: string
-  tone: 'teal' | 'red' | 'green' | 'blue'
-  children: React.ReactNode
-}) {
-  return (
-    <Card className={`preview-panel preview-panel--${tone}`}>
-      <div className="panel-head">
-        <span>{title}</span>
-        <Pill tone={tone === 'red' ? 'warning' : tone === 'green' ? 'positive' : 'teal'}>{title}</Pill>
-      </div>
-      {children}
-    </Card>
-  )
-}
-
-function PricingCard({
-  name,
-  price,
-  features,
-  highlight = false,
-}: {
-  name: string
-  price: string
-  features: string[]
-  highlight?: boolean
-}) {
-  return (
-    <Card className={`pricing-card ${highlight ? 'pricing-card--highlight' : ''}`}>
-      <Pill tone={highlight ? 'teal' : 'default'}>{name}</Pill>
-      <strong>{price}</strong>
-      <ul>
-        {features.map((feature) => (
-          <li key={feature}>{feature}</li>
-        ))}
-      </ul>
-      <Link to="/onboarding" className={`button ${highlight ? 'button--primary' : 'button--secondary'}`}>
-        Choose plan
-      </Link>
-    </Card>
-  )
-}
-
-function MiniDashboardPreview() {
-  return (
-    <div className="mini-preview">
-      <div className="mini-preview__ticker">₹0.023 / sec</div>
-      <div className="mini-preview__bars">
-        <div style={{ width: '72%' }} />
-        <div style={{ width: '42%' }} />
-        <div style={{ width: '28%' }} />
-      </div>
-    </div>
-  )
-}
-
-function MiniExpensesPreview() {
-  return <div className="mini-preview mini-preview--table" />
-}
-
-function MiniSimulatorPreview() {
-  return (
-    <div className="mini-preview">
-      <div className="mini-preview__curve" />
-      <div className="mini-preview__curve mini-preview__curve--alt" />
-    </div>
-  )
-}
-
-function MiniInsightsPreview() {
-  return (
-    <div className="mini-preview mini-preview--pie">
-      <div className="mini-preview__pie" />
-    </div>
   )
 }

@@ -642,9 +642,9 @@ export const goalETA = (
   };
 }
 
-export const parseMultiOp = (command: string, expenses: Expense[], sipAmount: number, ctx?: any): MultiOpResult => {
+export function parseMultiOp(whatIf: string): MultiOpResult {
   return {
-    ops: [{ verb: 'unknown', originalText: command, confidence: 0 }],
+    ops: [{ verb: 'unknown', originalText: whatIf, confidence: 0 }],
     message: 'Parsed command placeholder.',
     primaryVerb: 'unknown',
   }
