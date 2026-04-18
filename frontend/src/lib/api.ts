@@ -117,6 +117,30 @@ export type DashboardSummaryResponse = {
   projectedCorpus: number
 }
 
+export type SimulatorNlpParseResponse = {
+  ops: Array<{
+    verb: 'stop' | 'add' | 'cut' | 'delay' | 'unknown' | 'step_up' | 'pause' | 'lump_sum' | 'withdraw' | 'redirect'
+    target?: string
+    amount?: number
+    originalText?: string
+    confidence?: number
+    durationMonths?: number
+    atMonth?: number
+    delayMonths?: number
+    stepUpRate?: number
+    eventAmount?: number
+    inheritedVerb?: 'stop' | 'add' | 'cut' | 'delay' | 'unknown' | 'step_up' | 'pause' | 'lump_sum' | 'withdraw' | 'redirect' | null
+    label?: string
+  }>
+  primaryVerb?: 'stop' | 'add' | 'cut' | 'delay' | 'unknown' | 'step_up' | 'pause' | 'lump_sum' | 'withdraw' | 'redirect' | null
+  isAmbiguous: boolean
+  alternatives: string[]
+  message: string
+  model: string
+  provider: 'gemini' | 'fallback'
+  configured: boolean
+}
+
 const generateSessionId = () => crypto.randomUUID()
 
 export const getSessionId = () => {
@@ -231,4 +255,9 @@ export const api = {
   deleteScenario: async (id: string) =>
     requestWithRefresh(`/api/scenarios/${id}`, { method: 'DELETE' }),
   getDashboardSummary: async () => requestWithRefresh<DashboardSummaryResponse>('/api/dashboard/summary'),
+  parseSimulatorCommand: async (command: string) =>
+    requestWithRefresh<SimulatorNlpParseResponse>('/api/simulator/nlp/parse', {
+      method: 'POST',
+      body: JSON.stringify({ command }),
+    }),
 }

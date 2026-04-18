@@ -1,4 +1,4 @@
-export type Frequency = 'daily' | 'weekly' | 'monthly'
+﻿export type Frequency = 'daily' | 'weekly' | 'monthly'
 export type ExpenseTag = 'essential' | 'avoidable' | 'impulse'
 
 export type Expense = {
@@ -216,7 +216,7 @@ export const parseWhatIfCommand = (
     }
   }
 
-  const sipMatch = text.match(/(?:add|start|increase)\s*(?:sip|sip by)?\s*₹?\s*([\d,]+)/)
+  const sipMatch = text.match(/(?:add|start|increase)\s*(?:sip|sip by)?\s*â‚¹?\s*([\d,]+)/)
   if (sipMatch) {
     const value = Number(sipMatch[1].replace(/,/g, ''))
     return {
@@ -226,7 +226,7 @@ export const parseWhatIfCommand = (
     }
   }
 
-  const cutMatch = text.match(/cut\s*₹?\s*([\d,]+)/)
+  const cutMatch = text.match(/cut\s*â‚¹?\s*([\d,]+)/)
   if (cutMatch) {
     const value = Number(cutMatch[1].replace(/,/g, ''))
     return {
@@ -248,7 +248,7 @@ export const parseWhatIfCommand = (
   }
 
   return {
-    label: 'Try "stop Swiggy" or "add ₹2000 SIP"',
+    label: 'Try "stop Swiggy" or "add â‚¹2000 SIP"',
     monthlyImpact: 0,
     sipImpact: sipAmount,
   }
@@ -378,7 +378,7 @@ export const buildSipGrowthSeries = (
   })
 }
 
-// What-if impact calculator — returns deltas for dashboard panels
+// What-if impact calculator â€” returns deltas for dashboard panels
 export type WhatIfImpact = {
   label: string
   monthlySavingsChange: number
@@ -643,10 +643,119 @@ export const goalETA = (
 }
 
 export function parseMultiOp(whatIf: string): MultiOpResult {
+  const normalizeCommand = (value: string) =>
+    value
+      .toLowerCase()
+      .replace(/[₹,]/g, ' ')
+      .replace(/\brs\.?\b/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+
+  const parseNumber = (value?: string) => {
+    if (!value) return undefined
+    const parsed = Number(value.replace(/,/g, ''))
+    return Number.isFinite(parsed) ? parsed : undefined
+  }
+
+  const buildOp = (op: ParsedOp): ParsedOp => ({
+    confidence: 0.7,
+    originalText: op.originalText,
+    label: op.label,
+    ...op,
+  })
+
+  const parseClause = (clause: string): ParsedOp => {
+    const clean = normalizeCommand(clause)
+
+    const delayMatch = clean.match(/\bdelay\b(?: .*?)?\b(?:by|for)\s+(\d+)\s*(month|months|mo)\b/)
+    if (delayMatch) {
+      const delayMonths = parseNumber(delayMatch[1]) ?? 0
+      return buildOp({
+        verb: 'delay',
+        target: 'sip',
+        delayMonths,
+        confidence: 0.96,
+        originalText: clause,
+        label: `Delay SIP by ${delayMonths} months`,
+      })
+    }
+
+    const stepUpMatch = clean.match(/\b(increase|step up|raise)\b.*?\bsip\b.*?\bby\s+(\d+(?:\.\d+)?)\s*%/)
+    if (stepUpMatch) {
+      const stepUpRate = parseNumber(stepUpMatch[2]) ?? 0
+      return buildOp({
+        verb: 'step_up',
+        target: 'sip',
+        stepUpRate,
+        confidence: 0.94,
+        originalText: clause,
+        label: `Increase SIP by ${stepUpRate}%`,
+      })
+    }
+
+    const addSipMatch = clean.match(/\b(?:add|increase|raise)\b.*?(\d+(?:\.\d+)?)\b.*?\b(?:sip|monthly sip)\b|\b(?:add|increase|raise)\b.*?\b(?:sip|monthly sip)\b.*?(\d+(?:\.\d+)?)/)
+    if (addSipMatch) {
+      const amount = parseNumber(addSipMatch[1] ?? addSipMatch[2]) ?? 0
+      return buildOp({
+        verb: 'add',
+        target: 'sip',
+        amount,
+        confidence: 0.95,
+        originalText: clause,
+        label: `Add ${formatINR(amount)} to monthly SIP`,
+      })
+    }
+
+    const cutMatch = clean.match(/\b(cut|reduce)\b\s+(.+?)(?:\s+by\s+(\d+(?:\.\d+)?))?$/)
+    if (cutMatch) {
+      const amount = parseNumber(cutMatch[3]) ?? 0
+      const target = cutMatch[2]?.trim() || 'expense'
+      return buildOp({
+        verb: 'cut',
+        target,
+        amount: amount === 0 ? 0 : -amount,
+        confidence: amount > 0 ? 0.84 : 0.7,
+        originalText: clause,
+        label: amount > 0 ? `Cut ${target} by ${formatINR(amount)}` : `Cut ${target}`,
+      })
+    }
+
+    const stopMatch = clean.match(/\b(stop|pause|cancel)\b\s+(.+)/)
+    if (stopMatch) {
+      return buildOp({
+        verb: 'stop',
+        target: stopMatch[2]?.trim() || 'expense',
+        confidence: 0.82,
+        originalText: clause,
+        label: `Stop ${stopMatch[2]?.trim()}`,
+      })
+    }
+
+    return {
+      verb: 'unknown',
+      originalText: clause,
+      confidence: 0,
+      label: 'No signal',
+    }
+  }
+
+  const clauses = whatIf
+    .split(/\s+(?:and|then)\s+|,/i)
+    .map((part) => part.trim())
+    .filter(Boolean)
+
+  const ops = (clauses.length > 0 ? clauses : [whatIf]).map(parseClause)
+  const primaryVerb = ops.find((op) => op.verb !== 'unknown')?.verb ?? 'unknown'
+  const isAmbiguous = ops.every((op) => op.verb === 'unknown')
+
   return {
-    ops: [{ verb: 'unknown', originalText: whatIf, confidence: 0 }],
-    message: 'Parsed command placeholder.',
-    primaryVerb: 'unknown',
+    ops,
+    message: isAmbiguous ? 'Could not confidently parse the command.' : 'Parsed command locally.',
+    primaryVerb,
+    isAmbiguous,
+    alternatives: isAmbiguous
+      ? ['Add ₹5000 to monthly SIP', 'Increase SIP by 10%', 'Delay SIP by 3 months']
+      : [],
   }
 }
 
@@ -654,7 +763,8 @@ export const buildCommandSuggestions = (expenses: Expense[]): string[] => {
   return [
     'Add ₹5000 to monthly SIP',
     'Increase SIP by 10%',
-    'Delay SIPs by 3 months',
-    ...(expenses || []).slice(0, 2).map(e => `Stop ${e.name}`),
+    'Delay SIP by 3 months',
+    ...(expenses || []).slice(0, 2).map((e) => `Stop ${e.name}`),
   ]
 }
+

@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion'
-import type { ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, NavLink } from 'react-router-dom'
-import { ArrowRight, CheckCircle2 } from 'lucide-react'
+import { ArrowRight, Check, CheckCircle2, ChevronDown, Languages, Moon, Sun } from 'lucide-react'
+import { useI18n } from './i18n'
 
 type ShellProps = {
   children: ReactNode
@@ -9,8 +10,7 @@ type ShellProps = {
 
 export function AppShell({ children }: ShellProps) {
   return (
-    <div className="bg-surface text-on-surface font-body antialiased selection:bg-primary-container selection:text-primary min-h-screen">
-      {/* Background Ambience if desired */}
+    <div className="app-shell bg-surface text-on-surface font-body antialiased selection:bg-primary-container selection:text-primary min-h-screen">
       {children}
     </div>
   )
@@ -25,22 +25,67 @@ export function PageFrame({ children }: PageFrameProps) {
 }
 
 export function TopNav() {
+  const { language, setLanguage, copy } = useI18n()
+  const [isLanguageOpen, setIsLanguageOpen] = useState(false)
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    if (typeof window === 'undefined') return 'dark'
+
+    const storedTheme = window.localStorage.getItem('expense-autopsy-theme')
+    if (storedTheme === 'dark' || storedTheme === 'light') return storedTheme
+
+    return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+  })
+  const languageMenuRef = useRef<HTMLDivElement | null>(null)
   const navLinks = [
-    { label: 'Overview', href: '/dashboard', icon: 'dashboard' },
-    { label: 'Cash Flow', href: '/expenses', icon: 'payments' },
-    { label: 'Scenario Lab', href: '/simulator', icon: 'query_stats' },
-    { label: 'Aspirations', href: '/goals', icon: 'track_changes', primary: true },
-    { label: 'Vault', href: '/profile', icon: 'lock' },
+    { label: copy.nav.dashboard, href: '/dashboard', icon: 'dashboard' },
+    { label: copy.nav.expenses, href: '/expenses', icon: 'payments' },
+    { label: copy.nav.simulator, href: '/simulator', icon: 'query_stats' },
+    { label: copy.nav.goals, href: '/goals', icon: 'track_changes', primary: true },
+    { label: copy.nav.profile, href: '/profile', icon: 'lock' },
   ]
+  const languages = [
+    { value: 'en', label: copy.nav.languageNames.en },
+    { value: 'hi', label: copy.nav.languageNames.hi },
+    { value: 'ta', label: copy.nav.languageNames.ta },
+    { value: 'bn', label: copy.nav.languageNames.bn },
+  ] as const
+
+  useEffect(() => {
+    if (!isLanguageOpen) return
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!languageMenuRef.current?.contains(event.target as Node)) {
+        setIsLanguageOpen(false)
+      }
+    }
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsLanguageOpen(false)
+      }
+    }
+
+    window.addEventListener('mousedown', handlePointerDown)
+    window.addEventListener('keydown', handleEscape)
+
+    return () => {
+      window.removeEventListener('mousedown', handlePointerDown)
+      window.removeEventListener('keydown', handleEscape)
+    }
+  }, [isLanguageOpen])
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+    window.localStorage.setItem('expense-autopsy-theme', theme)
+  }, [theme])
 
   return (
     <>
-      {/* TopAppBar */}
-      <header className="fixed top-0 w-full z-50 bg-zinc-950/80 backdrop-blur-2xl bg-gradient-to-b from-zinc-900/50 to-transparent shadow-[0_20px_40px_rgba(0,0,0,0.4)]">
+      <header className="topnav-header fixed top-0 w-full z-50 backdrop-blur-2xl">
         <div className="flex justify-between items-center px-12 py-6 w-full max-w-[1920px] mx-auto">
           <div className="flex items-center gap-12">
             <Link to="/" className="text-2xl font-black tracking-tighter text-emerald-400 font-headline">
-              Architect
+              {copy.nav.brand}
             </Link>
             <nav className="hidden md:flex items-center gap-8 font-['Manrope'] font-bold tracking-tight text-sm uppercase">
               {navLinks.map((item) => (
@@ -49,8 +94,8 @@ export function TopNav() {
                   to={item.href}
                   className={({ isActive }) =>
                     isActive
-                      ? "text-emerald-400 font-extrabold border-b-2 border-emerald-400 pb-1 hover:bg-white/5 transition-all duration-300 scale-95 active:scale-90 px-3 py-2 rounded-lg"
-                      : "text-zinc-500 hover:text-zinc-100 transition-colors hover:bg-white/5 transition-all duration-300 scale-95 active:scale-90 px-3 py-2 rounded-lg"
+                      ? 'topnav-link topnav-link--active'
+                      : 'topnav-link'
                   }
                 >
                   {item.label}
@@ -59,14 +104,67 @@ export function TopNav() {
             </nav>
           </div>
           <div className="flex items-center gap-6">
-            <button className="hidden md:flex items-center gap-2 px-6 py-3 rounded-full bg-surface-container-highest text-on-surface hover:bg-surface-variant transition-colors text-sm font-medium font-body border border-outline-variant/15">
-              Secure Portal
+            <div ref={languageMenuRef} className={`language-picker ${isLanguageOpen ? 'is-open' : ''}`}>
+              <button
+                type="button"
+                className="language-picker__trigger"
+                aria-label={copy.nav.languageLabel}
+                aria-haspopup="menu"
+                aria-expanded={isLanguageOpen}
+                onClick={() => setIsLanguageOpen((open) => !open)}
+              >
+                <span className="language-picker__badge">{copy.nav.languageLabel}</span>
+                <span className="language-picker__icon" aria-hidden="true">
+                  <Languages size={15} />
+                </span>
+                <span className="language-picker__value">
+                  {languages.find((item) => item.value === language)?.label}
+                </span>
+                <span className="language-picker__chevron" aria-hidden="true">
+                  <ChevronDown size={14} />
+                </span>
+              </button>
+              {isLanguageOpen ? (
+                <div className="language-picker__menu" role="menu" aria-label={copy.nav.languageLabel}>
+                  {languages.map((item) => (
+                    <button
+                      key={item.value}
+                      type="button"
+                      role="menuitemradio"
+                      aria-checked={language === item.value}
+                      className={`language-picker__option ${language === item.value ? 'is-active' : ''}`}
+                      onClick={() => {
+                        setLanguage(item.value)
+                        setIsLanguageOpen(false)
+                      }}
+                    >
+                      <span>{item.label}</span>
+                      {language === item.value ? <Check size={14} /> : null}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+            <button
+              type="button"
+              className="theme-toggle hidden md:inline-flex"
+              aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+              title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+              onClick={() => setTheme((currentTheme) => (currentTheme === 'dark' ? 'light' : 'dark'))}
+            >
+              <span className={`theme-toggle__thumb theme-toggle__thumb--${theme}`} aria-hidden="true" />
+              <span className={`theme-toggle__icon ${theme === 'light' ? 'is-active' : ''}`} aria-hidden="true">
+                <Sun size={16} />
+              </span>
+              <span className={`theme-toggle__icon ${theme === 'dark' ? 'is-active' : ''}`} aria-hidden="true">
+                <Moon size={16} />
+              </span>
             </button>
             <div className="flex items-center gap-4 text-primary">
-              <button className="hover:bg-white/5 p-2 rounded-full transition-colors">
+              <button className="topnav-icon-button">
                 <span className="material-symbols-outlined text-2xl">notifications_active</span>
               </button>
-              <Link to="/profile" className="hover:bg-white/5 p-2 rounded-full transition-colors">
+              <Link to="/profile" className="topnav-icon-button" aria-label={copy.nav.profile}>
                 <span className="material-symbols-outlined text-2xl">account_circle</span>
               </Link>
             </div>
@@ -74,11 +172,10 @@ export function TopNav() {
         </div>
       </header>
 
-      {/* SideNavBar */}
-      <nav className="hidden lg:flex flex-col h-screen w-72 rounded-r-[3rem] fixed left-0 top-0 z-40 bg-zinc-950 bg-zinc-900/30 shadow-[40px_0_80px_rgba(0,0,0,0.3)] py-10 pt-32">
+      <nav className="side-rail hidden lg:flex flex-col h-screen w-72 rounded-r-[3rem] fixed left-0 top-0 z-40 py-10 pt-32">
         <div className="px-8 mb-12">
-          <h2 className="text-xl font-bold text-zinc-100 font-headline mb-1">Wealth Gallery</h2>
-          <p className="text-xs text-zinc-500 font-body uppercase tracking-wider">Premium Tier</p>
+          <h2 className="side-rail__title text-xl font-bold font-headline mb-1">Wealth Gallery</h2>
+          <p className="side-rail__eyebrow text-xs font-body uppercase tracking-wider">Premium Tier</p>
         </div>
         <div className="flex flex-col gap-2 font-['Manrope'] font-medium text-sm flex-grow">
           {navLinks.map((item) => (
@@ -87,8 +184,8 @@ export function TopNav() {
               to={item.href}
               className={({ isActive }) =>
                 isActive || item.primary
-                  ? "flex items-center gap-4 bg-emerald-400/10 text-emerald-400 rounded-full mx-4 py-4 px-6 font-bold hover:bg-zinc-900/50 transition-all translate-x-1 transition-transform"
-                  : "flex items-center gap-4 text-zinc-500 hover:text-zinc-200 mx-4 py-4 px-6 hover:bg-zinc-900/50 transition-all rounded-xl translate-x-1 transition-transform"
+                  ? 'side-rail__link side-rail__link--active'
+                  : 'side-rail__link'
               }
             >
               <span
@@ -111,18 +208,18 @@ export function TopNav() {
             to="/pricing"
             className={({ isActive }) =>
               isActive
-                ? "flex items-center gap-4 bg-secondary/10 text-secondary rounded-full mx-4 py-3 px-6 font-bold transition-all"
-                : "flex items-center gap-4 text-zinc-500 hover:text-zinc-200 mx-4 py-3 px-6 hover:bg-zinc-900/50 transition-all rounded-xl"
+                ? 'side-rail__link side-rail__link--accent'
+                : 'side-rail__link'
             }
           >
             <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>workspace_premium</span>
             Pricing
           </NavLink>
-          <a className="flex items-center gap-4 text-zinc-500 hover:text-zinc-200 mx-4 py-3 px-6 hover:bg-zinc-900/50 transition-all rounded-xl" href="#">
+          <a className="side-rail__link" href="#">
             <span className="material-symbols-outlined text-lg">settings</span>
             Settings
           </a>
-          <a className="flex items-center gap-4 text-zinc-500 hover:text-zinc-200 mx-4 py-3 px-6 hover:bg-zinc-900/50 transition-all rounded-xl" href="#">
+          <a className="side-rail__link" href="#">
             <span className="material-symbols-outlined text-lg">gavel</span>
             Legal
           </a>

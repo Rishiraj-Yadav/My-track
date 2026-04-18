@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs'
 import jwt, { type SignOptions } from 'jsonwebtoken'
 import { env } from '../config/env.js'
 import { User } from '../models/User.js'
+import { seedStarterWorkspaceIfEmpty } from './workspaceSeed.js'
 import { HttpError } from '../utils/httpError.js'
 
 const slugify = (value: string) =>
@@ -139,6 +140,8 @@ export const bootstrapAnonymousUser = async (clientSessionId: string) => {
   if (!user) {
     throw new HttpError(500, 'Unable to bootstrap session')
   }
+
+  await seedStarterWorkspaceIfEmpty(user)
 
   const tokens = createTokens(user.id)
   user.refreshTokenHash = await bcrypt.hash(tokens.refreshToken, env.BCRYPT_SALT_ROUNDS)

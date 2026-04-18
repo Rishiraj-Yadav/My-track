@@ -12,6 +12,8 @@ const envSchema = z.object({
   JWT_ACCESS_EXPIRES_IN: z.string().default('15m'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
   BCRYPT_SALT_ROUNDS: z.coerce.number().int().min(8).max(15).default(10),
+  GEMINI_API_KEY: z.string().min(1).optional(),
+  GEMINI_MODEL: z.string().min(1).default('gemini-1.5-flash'),
 })
 
 export const env = envSchema.parse(process.env)

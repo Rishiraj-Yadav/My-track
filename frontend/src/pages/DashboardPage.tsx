@@ -24,9 +24,10 @@ import { useAppStore } from '../store'
 export function DashboardPage() {
   const { expenses, goals, sip, profile, whatIf } = useAppStore()
   const totals = calculateMonthlyTotals(expenses)
-  const saveRate = profile.monthlySalary > 0
-    ? ((profile.monthlySalary - totals.total) / profile.monthlySalary) * 100
-    : 0
+  const saveRate =
+    profile.monthlySalary > 0
+      ? ((profile.monthlySalary - totals.total) / profile.monthlySalary) * 100
+      : 0
 
   const score = healthScore({
     salary: profile.monthlySalary,
@@ -47,15 +48,14 @@ export function DashboardPage() {
     .sort((a, b) => b.mo - a.mo)
     .slice(0, 5)
 
-  // Top 3 Cats for Pie distribution approximation
   const topCats = useMemo(() => {
     const totalCatAmount = cats.reduce((sum, c) => sum + c.amount, 0)
-    const sorted = [...cats].sort((a,b) => b.amount - a.amount).slice(0, 3)
+    const sorted = [...cats].sort((a, b) => b.amount - a.amount).slice(0, 3)
     const colors = ['bg-primary', 'bg-secondary', 'bg-tertiary']
     return sorted.map((c, i) => ({
       ...c,
       pct: totalCatAmount > 0 ? Math.round((c.amount / totalCatAmount) * 100) : 0,
-      colorClass: colors[i % colors.length]
+      colorClass: colors[i % colors.length],
     }))
   }, [cats])
 
@@ -63,27 +63,26 @@ export function DashboardPage() {
     <PageFrame>
       <header className="mb-16 flex flex-col md:flex-row justify-between items-baseline gap-6">
         <div>
-          <h1 className="font-headline text-4xl md:text-[3.5rem] font-bold tracking-tight text-on-surface leading-tight">Financial Overview</h1>
+          <h1 className="font-headline text-4xl md:text-[3.5rem] font-bold tracking-tight text-on-surface leading-tight">
+            Financial Overview
+          </h1>
           <p className="text-on-surface-variant font-body text-base mt-2 max-w-lg">
             Your wealth architecture at a glance. Analyzing cash flow velocity and structural integrity.
           </p>
         </div>
         <div className="text-right">
-          <p className="text-sm font-medium text-outline uppercase tracking-widest mb-1">Monthly Salary</p>
+          <p className="text-sm font-medium text-outline uppercase tracking-widest mb-1">
+            Monthly Salary
+          </p>
           <div className="font-headline text-5xl md:text-6xl font-extrabold text-on-surface tracking-tighter group hover:text-primary transition-colors duration-500">
             {formatCompactINR(profile.monthlySalary)}
           </div>
         </div>
       </header>
 
-      {/* Bento Grid Layout */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 auto-rows-min">
-        
-        {/* Left Column (Wider) */}
         <div className="md:col-span-7 flex flex-col gap-6 md:gap-8">
-          {/* KPI Row */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8">
-            {/* Total Spending */}
             <div className="bg-surface-container-low rounded-xl p-8 relative overflow-hidden group border border-outline-variant/15 shadow-[0_20px_40px_rgba(0,0,0,0.2)]">
               <div className="absolute -right-10 -top-10 w-40 h-40 bg-tertiary-fixed-dim/10 rounded-full blur-3xl group-hover:bg-tertiary-fixed-dim/20 transition-all duration-700"></div>
               <div className="flex justify-between items-start mb-6 relative z-10">
@@ -92,7 +91,9 @@ export function DashboardPage() {
                   <p className="text-sm text-on-surface-variant font-medium mt-1">Trailing 30 Days</p>
                 </div>
                 <div className="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center text-tertiary">
-                  <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>credit_card</span>
+                  <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
+                    credit_card
+                  </span>
                 </div>
               </div>
               <div className="relative z-10">
@@ -102,7 +103,6 @@ export function DashboardPage() {
               </div>
             </div>
 
-            {/* Savings Rate */}
             <div className="bg-surface-container-low rounded-xl p-8 relative overflow-hidden group border border-outline-variant/15 shadow-[0_20px_40px_rgba(0,0,0,0.2)]">
               <div className="absolute -right-10 -top-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl group-hover:bg-primary/20 transition-all duration-700"></div>
               <div className="flex justify-between items-start mb-6 relative z-10">
@@ -111,7 +111,9 @@ export function DashboardPage() {
                   <p className="text-sm text-on-surface-variant font-medium mt-1">Monthly Velocity</p>
                 </div>
                 <div className="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center text-primary">
-                  <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>savings</span>
+                  <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
+                    savings
+                  </span>
                 </div>
               </div>
               <div className="relative z-10">
@@ -122,12 +124,13 @@ export function DashboardPage() {
             </div>
           </div>
 
-          {/* SIP Growth Line Chart */}
           <div className="bg-surface-container-low rounded-xl p-8 border border-outline-variant/15 shadow-[0_20px_40px_rgba(0,0,0,0.2)] h-[440px] flex flex-col">
             <div className="flex justify-between items-end mb-8">
               <div>
                 <h3 className="font-headline text-xl font-bold text-on-surface mb-1">SIP Growth Trajectory</h3>
-                <p className="text-sm text-on-surface-variant font-medium">Systematic Investment Portfolio Performance</p>
+                <p className="text-sm text-on-surface-variant font-medium">
+                  Systematic Investment Portfolio Performance
+                </p>
               </div>
               <div className="flex gap-2">
                 <div className="flex items-center gap-2">
@@ -140,7 +143,7 @@ export function DashboardPage() {
                 </div>
               </div>
             </div>
-            
+
             <div className="relative flex-grow w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={sipGrowth}>
@@ -157,9 +160,13 @@ export function DashboardPage() {
                   <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
                   <XAxis dataKey="year" stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 11 }} />
                   <YAxis stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 11 }} tickFormatter={(v) => `${(v / 100000).toFixed(1)}L`} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#121416', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}
-                    formatter={(value) => formatCompactINR(Number(value ?? 0))} 
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#121416',
+                      borderColor: 'rgba(255,255,255,0.1)',
+                      borderRadius: '8px',
+                    }}
+                    formatter={(value) => formatCompactINR(Number(value ?? 0))}
                   />
                   <Area type="monotone" dataKey="principal" stackId="1" stroke="#66b8ff" fill="url(#pg)" strokeWidth={2} name="You put in" />
                   <Area type="monotone" dataKey="returns" stackId="1" stroke="#35f0d2" fill="url(#rg)" strokeWidth={2} name="Market gives" />
@@ -169,9 +176,7 @@ export function DashboardPage() {
           </div>
         </div>
 
-        {/* Right Column (Narrower) */}
         <div className="md:col-span-5 flex flex-col gap-6 md:gap-8">
-          {/* Financial Health Score */}
           <div className="bg-surface-container-highest rounded-xl p-8 relative overflow-hidden shadow-[0_20px_40px_rgba(0,0,0,0.3)]">
             <div className="absolute right-0 top-0 w-1/2 h-full bg-gradient-to-l from-primary/5 to-transparent"></div>
             <h3 className="font-headline text-lg font-bold text-on-surface mb-8">Architectural Score</h3>
@@ -179,12 +184,17 @@ export function DashboardPage() {
               <div className="relative w-32 h-32 flex items-center justify-center">
                 <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                   <circle cx="50" cy="50" fill="none" r="45" stroke="#1a1c1e" strokeWidth="6"></circle>
-                  <circle 
-                    className="drop-shadow-[0_0_10px_rgba(78,222,163,0.5)]" 
-                    cx="50" cy="50" fill="none" r="45" stroke="#4edea3" 
-                    strokeDasharray="283" 
-                    strokeDashoffset={283 - (283 * score) / 100} 
-                    strokeLinecap="round" strokeWidth="6"
+                  <circle
+                    className="drop-shadow-[0_0_10px_rgba(78,222,163,0.5)]"
+                    cx="50"
+                    cy="50"
+                    fill="none"
+                    r="45"
+                    stroke="#4edea3"
+                    strokeDasharray="283"
+                    strokeDashoffset={283 - (283 * score) / 100}
+                    strokeLinecap="round"
+                    strokeWidth="6"
                   ></circle>
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -200,7 +210,6 @@ export function DashboardPage() {
             </div>
           </div>
 
-          {/* Category Distribution */}
           <div className="bg-surface-container-low rounded-xl p-8 border border-outline-variant/15 shadow-[0_20px_40px_rgba(0,0,0,0.2)] flex-1">
             <h3 className="font-headline text-lg font-bold text-on-surface mb-6">Allocation Architecture</h3>
             <div className="space-y-6">
@@ -217,18 +226,15 @@ export function DashboardPage() {
                   </div>
                 </div>
               ))}
-              {topCats.length === 0 && (
+              {topCats.length === 0 ? (
                 <p className="text-sm text-on-surface-variant">No expenses recorded yet.</p>
-              )}
+              ) : null}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Lower Section: Leakage & Goals */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 mt-6 md:gap-8 md:mt-8">
-        
-        {/* Top Wasteful Expenses */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 mt-6 md:mt-8">
         <div className="bg-surface-container-low rounded-xl p-8 border border-outline-variant/15 shadow-[0_20px_40px_rgba(0,0,0,0.2)] flex flex-col">
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -236,7 +242,9 @@ export function DashboardPage() {
               <p className="text-sm text-on-surface-variant font-medium">Identified inefficiencies</p>
             </div>
             <div className="w-10 h-10 rounded-full bg-tertiary-fixed-dim/10 flex items-center justify-center text-tertiary">
-              <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>warning</span>
+              <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
+                warning
+              </span>
             </div>
           </div>
           <div className="space-y-4 flex-grow overflow-y-auto max-h-64 pr-2">
@@ -254,20 +262,19 @@ export function DashboardPage() {
                 <p className="font-headline font-bold text-tertiary">-{formatINR(l.mo)}</p>
               </div>
             ))}
-            {leaks.length === 0 && (
+            {leaks.length === 0 ? (
               <p className="text-sm text-on-surface-variant">No leaks found. Great job!</p>
-            )}
+            ) : null}
           </div>
         </div>
 
-        {/* Goal Progress */}
         <div className="bg-surface-container-low rounded-xl p-8 border border-outline-variant/15 shadow-[0_20px_40px_rgba(0,0,0,0.2)] relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-secondary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4"></div>
           <h3 className="font-headline text-lg font-bold text-on-surface mb-8 relative z-10">Structural Goals</h3>
           <div className="relative z-10 space-y-8 flex-grow overflow-y-auto max-h-64 pr-2">
             {goals.map((g, i) => {
               const pct = (g.savedAmount / Math.max(g.targetAmount, 1)) * 100
-              const progressColor = i % 2 === 0 ? "secondary" : "primary"
+              const progressColor = i % 2 === 0 ? 'secondary' : 'primary'
               return (
                 <div key={g.id}>
                   <div className="flex justify-between items-end mb-3">
@@ -282,17 +289,17 @@ export function DashboardPage() {
                     </span>
                   </div>
                   <div className="w-full bg-surface-container-highest rounded-full h-3 overflow-hidden border border-outline-variant/10">
-                    <div 
-                      className={`bg-gradient-to-r from-${progressColor}-fixed-dim to-${progressColor} h-full rounded-full`} 
-                      style={{ width: `${Math.min(pct, 100)}%` }}>
-                    </div>
+                    <div
+                      className={`bg-gradient-to-r from-${progressColor}-fixed-dim to-${progressColor} h-full rounded-full`}
+                      style={{ width: `${Math.min(pct, 100)}%` }}
+                    ></div>
                   </div>
                 </div>
               )
             })}
-            {goals.length === 0 && (
+            {goals.length === 0 ? (
               <p className="text-sm text-on-surface-variant">No goals established yet.</p>
-            )}
+            ) : null}
           </div>
         </div>
       </div>

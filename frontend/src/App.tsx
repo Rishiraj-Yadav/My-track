@@ -12,11 +12,13 @@ import { ProfilePage } from './pages/ProfilePage'
 import { ScenariosPage } from './pages/ScenariosPage'
 import { SimulatorPage } from './pages/SimulatorPage'
 import { useAppStore } from './store'
+import { useI18n } from './i18n'
 
 function App() {
   const bootstrap = useAppStore((state) => state.bootstrap)
   const isLoading = useAppStore((state) => state.isLoading)
   const error = useAppStore((state) => state.error)
+  const { copy } = useI18n()
 
   useEffect(() => {
     void bootstrap()
@@ -27,9 +29,9 @@ function App() {
       <AppShell>
         <div className="page-frame" style={{ minHeight: '100vh', display: 'grid', placeItems: 'center' }}>
           <div className="card" style={{ padding: '2rem 2.5rem', textAlign: 'center' }}>
-            <p className="eyebrow">Loading profile</p>
-            <h2>Fetching your saved data from MongoDB</h2>
-            <p className="section-copy">Hang tight while we restore your profile, expenses, goals, and SIP state.</p>
+            <p className="eyebrow">{copy.app.loadingEyebrow}</p>
+            <h2>{copy.app.loadingTitle}</h2>
+            <p className="section-copy">{copy.app.loadingCopy}</p>
           </div>
         </div>
       </AppShell>
@@ -41,8 +43,8 @@ function App() {
       <AppShell>
         <div className="page-frame" style={{ minHeight: '100vh', display: 'grid', placeItems: 'center' }}>
           <div className="card" style={{ padding: '2rem 2.5rem', maxWidth: '560px' }}>
-            <p className="eyebrow">Startup error</p>
-            <h2>We could not load your saved profile</h2>
+            <p className="eyebrow">{copy.app.errorEyebrow}</p>
+            <h2>{copy.app.errorTitle}</h2>
             <p className="section-copy">{error}</p>
           </div>
         </div>
