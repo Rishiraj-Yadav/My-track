@@ -7,6 +7,7 @@ import { ExpensesPage } from './pages/ExpensesPage'
 import { GoalsPage } from './pages/GoalsPage'
 import { LandingPage } from './pages/LandingPage'
 import { OnboardingPage } from './pages/OnboardingPage'
+import { PricingPage } from './pages/PricingPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { ScenariosPage } from './pages/ScenariosPage'
 import { SimulatorPage } from './pages/SimulatorPage'
@@ -79,6 +80,7 @@ function AppRoutes() {
             <Route path="/scenarios" element={<ScenariosPage />} />
             <Route path="/onboarding" element={<OnboardingPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/pricing" element={<PricingPage />} />
           </Routes>
         </motion.div>
       </AnimatePresence>

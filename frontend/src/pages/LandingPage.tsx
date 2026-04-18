@@ -40,7 +40,7 @@ export function LandingPage() {
           {/* Layered Glass Cards mimicking a 3D interface */}
           <div className="absolute top-10 right-0 w-80 h-96 bg-surface-bright/40 backdrop-blur-2xl rounded-xl border border-outline-variant/15 shadow-[0_30px_60px_rgba(0,0,0,0.5)] transform rotate-3 translate-x-4 flex flex-col p-6 z-20">
             <div className="text-on-surface-variant text-sm font-label mb-2">Projected Net Worth</div>
-            <div className="text-primary font-headline font-extrabold text-4xl mb-8">$2.4M</div>
+            <div className="text-primary font-headline font-extrabold text-4xl mb-8">₹2.4Cr</div>
             <div className="flex-grow flex items-end gap-3 opacity-80">
               <div className="w-1/6 bg-surface-variant rounded-t-sm h-1/4"></div>
               <div className="w-1/6 bg-surface-variant rounded-t-sm h-2/4"></div>
@@ -57,7 +57,7 @@ export function LandingPage() {
               <div className="text-on-surface-variant font-label text-sm">Monthly Leakage</div>
               <span className="material-symbols-outlined text-tertiary">warning</span>
             </div>
-            <div className="text-tertiary font-headline font-bold text-2xl mb-1">${formatCompactINR(leakMonthly).replace('₹', '')}</div>
+            <div className="text-tertiary font-headline font-bold text-2xl mb-1">{formatCompactINR(leakMonthly)}</div>
             <div className="text-on-surface-variant text-xs">Subscription overlap detected</div>
           </div>
         </div>

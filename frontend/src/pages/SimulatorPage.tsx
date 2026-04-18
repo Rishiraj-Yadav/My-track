@@ -74,7 +74,7 @@ export function SimulatorPage() {
         <header className="flex flex-col gap-3 mb-12">
           <p className="font-body text-secondary text-xs font-semibold tracking-[0.2em] uppercase">Simulation Analysis</p>
           <h2 className="font-headline text-5xl lg:text-7xl font-extrabold tracking-tight text-on-surface drop-shadow-sm">
-            You are giving up <span className="text-tertiary font-black drop-shadow-[0_0_15px_rgba(255,179,173,0.3)]">${formatCompactINR(finalGap).replace('₹', '')}</span>
+            You are giving up <span className="text-tertiary font-black drop-shadow-[0_0_15px_rgba(255,179,173,0.3)]">{formatCompactINR(finalGap)}</span>
           </h2>
           <p className="font-body text-on-surface-variant text-lg max-w-2xl mt-4 leading-relaxed font-light">
             Projected over a {parsedHorizon}-year horizon, your current idle capital is experiencing significant opportunity leakage relative to our proposed market index strategy.
@@ -93,7 +93,7 @@ export function SimulatorPage() {
             <div className="flex flex-col gap-3 relative z-10">
               <label className="font-label text-xs font-semibold text-on-surface-variant uppercase tracking-[0.15em]">Initial Capital</label>
               <div className="relative border-b border-white/10 pb-3 group focus-within:border-primary transition-colors">
-                <span className="absolute left-0 bottom-4 text-on-surface-variant font-headline text-3xl font-light">$</span>
+                <span className="absolute left-0 bottom-4 text-on-surface-variant font-headline text-3xl font-light">₹</span>
                 <input 
                   className="w-full bg-transparent border-none focus:ring-0 text-on-surface font-headline font-black text-4xl pl-8 p-0 outline-none tracking-tight transition-colors" 
                   type="number" 
@@ -107,7 +107,7 @@ export function SimulatorPage() {
             <div className="flex flex-col gap-3 mt-4 relative z-10">
               <label className="font-label text-xs font-semibold text-on-surface-variant uppercase tracking-[0.15em]">Monthly Addition</label>
               <div className="relative border-b border-white/10 pb-3 group focus-within:border-primary transition-colors">
-                <span className="absolute left-0 bottom-4 text-on-surface-variant font-headline text-3xl font-light">$</span>
+                <span className="absolute left-0 bottom-4 text-on-surface-variant font-headline text-3xl font-light">₹</span>
                 <input 
                   className="w-full bg-transparent border-none focus:ring-0 text-on-surface font-headline font-black text-4xl pl-8 p-0 outline-none tracking-tight transition-colors" 
                   type="number" 
@@ -160,10 +160,10 @@ export function SimulatorPage() {
                   <p className="font-body text-xs font-semibold text-on-surface-variant uppercase tracking-[0.15em] mb-3">Projected Valuation Gap</p>
                   <div className="flex items-baseline gap-4">
                     <h3 className="font-headline text-4xl md:text-5xl font-black text-primary tracking-tight drop-shadow-[0_0_15px_rgba(78,222,163,0.2)]">
-                      ${formatCompactINR(finalOptimized).replace('₹', '')}
+                      {formatCompactINR(finalOptimized)}
                     </h3>
                     <span className="font-body text-sm text-on-surface-variant/80 font-medium tracking-wide">
-                      vs. ${formatCompactINR(finalStatusQuo).replace('₹', '')} <br/>(Status Quo)
+                      vs. {formatCompactINR(finalStatusQuo)} <br/>(Status Quo)
                     </span>
                   </div>
                 </div>
@@ -198,13 +198,13 @@ export function SimulatorPage() {
                     <YAxis 
                       stroke="rgba(255,255,255,0.3)" 
                       tick={{ fontSize: 11 }} 
-                      tickFormatter={(v) => formatCompactINR(v).replace('₹', '$')} 
+                      tickFormatter={(v) => formatCompactINR(v)} 
                       orientation="right"
                     />
                     <Tooltip 
                       contentStyle={{ backgroundColor: 'rgba(18, 20, 22, 0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px', backdropFilter: 'blur(10px)' }}
                       formatter={(value: any, name: any) => [
-                        `$${formatINR(Number(value)).replace('₹', '')}`, 
+                        formatINR(Number(value)), 
                         name === 'optimized' ? 'Optimized Portfolio' : name === 'statusQuo' ? 'Status Quo' : 'Gap'
                       ]}
                     />
@@ -231,7 +231,7 @@ export function SimulatorPage() {
                 
                 <div className="flex items-baseline gap-3 relative z-10">
                   <span className="font-headline text-6xl font-black text-tertiary tracking-tighter drop-shadow-[0_0_15px_rgba(255,179,173,0.3)]">
-                    -${lossPerMinute.toFixed(2)}
+                    -₹{lossPerMinute.toFixed(2)}
                   </span>
                   <span className="font-body text-on-surface-variant font-medium tracking-wide">/ minute</span>
                 </div>
@@ -253,7 +253,7 @@ export function SimulatorPage() {
                 </div>
                 
                 <p className="font-body text-zinc-300 text-[15px] leading-relaxed mb-8 relative z-10 font-light">
-                    Reallocating <strong>60% of your idle cash position</strong> ({formatCompactINR(parsedInitial * 0.6).replace('₹', '$')}) into a diversified equity model could neutralize the current inflation drag within <strong className="text-secondary font-semibold">14 months</strong>, significantly altering the {parsedHorizon}-year trajectory curve shown above.
+                    Reallocating <strong>60% of your idle cash position</strong> ({formatCompactINR(parsedInitial * 0.6)}) into a diversified equity model could neutralize the current inflation drag within <strong className="text-secondary font-semibold">14 months</strong>, significantly altering the {parsedHorizon}-year trajectory curve shown above.
                 </p>
                 
                 <button className="text-xs font-headline font-bold text-secondary uppercase tracking-[0.2em] hover:text-secondary-fixed transition-colors flex items-center gap-2 group relative z-10">

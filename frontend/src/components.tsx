@@ -107,6 +107,17 @@ export function TopNav() {
           </button>
         </div>
         <div className="flex flex-col gap-2 font-['Manrope'] font-medium text-sm mt-auto">
+          <NavLink
+            to="/pricing"
+            className={({ isActive }) =>
+              isActive
+                ? "flex items-center gap-4 bg-secondary/10 text-secondary rounded-full mx-4 py-3 px-6 font-bold transition-all"
+                : "flex items-center gap-4 text-zinc-500 hover:text-zinc-200 mx-4 py-3 px-6 hover:bg-zinc-900/50 transition-all rounded-xl"
+            }
+          >
+            <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>workspace_premium</span>
+            Pricing
+          </NavLink>
           <a className="flex items-center gap-4 text-zinc-500 hover:text-zinc-200 mx-4 py-3 px-6 hover:bg-zinc-900/50 transition-all rounded-xl" href="#">
             <span className="material-symbols-outlined text-lg">settings</span>
             Settings

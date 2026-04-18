@@ -48,7 +48,7 @@ export function ExpensesPage() {
             <div className="flex flex-col group">
               <label className="font-label text-sm font-medium text-on-surface-variant mb-2">Amount</label>
               <div className="relative flex items-end">
-                <span className="font-headline text-4xl font-bold text-on-surface mr-2 pb-1">$</span>
+                <span className="font-headline text-4xl font-bold text-on-surface mr-2 pb-1">₹</span>
                 <input
                   className="w-full bg-transparent border-none text-5xl font-headline font-extrabold text-on-surface p-0 focus:ring-0 placeholder:text-surface-variant outline-none border-b-2 border-surface-variant focus:border-primary transition-colors"
                   placeholder="0.00"
@@ -148,7 +148,7 @@ export function ExpensesPage() {
                   
                   <div className="flex items-center gap-6">
                     <div className="flex flex-col items-end gap-1">
-                      <span className="font-headline text-xl font-extrabold text-on-surface">-${formatINR(monthly).replace('₹', '')}</span>
+                      <span className="font-headline text-xl font-extrabold text-on-surface">-{formatINR(monthly)}</span>
                       <button 
                         onClick={() =>
                           updateExpense(expense.id, {

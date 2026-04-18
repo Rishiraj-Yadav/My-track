@@ -71,7 +71,7 @@ export function DashboardPage() {
         <div className="text-right">
           <p className="text-sm font-medium text-outline uppercase tracking-widest mb-1">Monthly Salary</p>
           <div className="font-headline text-5xl md:text-6xl font-extrabold text-on-surface tracking-tighter group hover:text-primary transition-colors duration-500">
-            {formatCompactINR(profile.monthlySalary).replace('₹', '$')}
+            {formatCompactINR(profile.monthlySalary)}
           </div>
         </div>
       </header>
@@ -97,7 +97,7 @@ export function DashboardPage() {
               </div>
               <div className="relative z-10">
                 <p className="font-headline text-[2.5rem] font-extrabold text-on-surface leading-none mb-2">
-                  {formatCompactINR(totals.total).replace('₹', '$')}
+                  {formatCompactINR(totals.total)}
                 </p>
               </div>
             </div>
@@ -251,7 +251,7 @@ export function DashboardPage() {
                     <p className="text-xs text-on-surface-variant">{l.tag} expense</p>
                   </div>
                 </div>
-                <p className="font-headline font-bold text-tertiary">-${formatINR(l.mo).replace('₹', '')}</p>
+                <p className="font-headline font-bold text-tertiary">-{formatINR(l.mo)}</p>
               </div>
             ))}
             {leaks.length === 0 && (
@@ -274,7 +274,7 @@ export function DashboardPage() {
                     <div>
                       <p className="font-bold text-sm text-on-surface mb-1">{g.name}</p>
                       <p className={`font-headline text-2xl font-extrabold text-${progressColor}`}>
-                        ${formatINR(g.savedAmount).replace('₹', '')}
+                        {formatINR(g.savedAmount)}
                       </p>
                     </div>
                     <span className={`text-sm font-bold text-${progressColor} bg-${progressColor}/10 px-3 py-1 rounded-full`}>

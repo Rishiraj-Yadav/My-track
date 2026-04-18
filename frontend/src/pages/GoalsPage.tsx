@@ -109,7 +109,7 @@ export function GoalsPage() {
               <span className="font-body text-on-surface-variant text-sm uppercase tracking-widest font-medium block mb-2">Required Monthly SIP</span>
               <div className="flex items-baseline gap-2 mb-8">
                 <span className="font-headline text-[3.5rem] font-extrabold text-primary tracking-tighter">
-                  {formatINR(Math.round(requiredSip)).replace('₹', '$')}
+                  {formatINR(Math.round(requiredSip))}
                 </span>
                 <span className="font-body text-on-surface-variant text-lg">/mo</span>
               </div>
@@ -117,7 +117,7 @@ export function GoalsPage() {
                 <div className="relative border-b border-surface-variant pb-2 group/input">
                   <label className="font-body text-xs text-on-surface-variant uppercase tracking-wider block mb-1">Target Corpus</label>
                   <div className="flex items-center">
-                    <span className="font-headline text-2xl text-on-surface mr-1">$</span>
+                    <span className="font-headline text-2xl text-on-surface mr-1">₹</span>
                     <input
                       className="bg-transparent border-none text-2xl font-headline font-bold text-on-surface p-0 focus:ring-0 w-full"
                       type="text"
@@ -155,7 +155,7 @@ export function GoalsPage() {
                 <div className="relative border-b border-surface-variant pb-2 group/input">
                   <label className="font-body text-xs text-on-surface-variant uppercase tracking-wider block mb-1">Current Savings Available (/mo)</label>
                   <div className="flex items-center">
-                    <span className="font-headline text-2xl text-on-surface mr-1">$</span>
+                    <span className="font-headline text-2xl text-on-surface mr-1">₹</span>
                     <input
                       className="bg-transparent border-none text-2xl font-headline font-bold text-on-surface p-0 focus:ring-0 w-full"
                       type="text"
@@ -203,11 +203,11 @@ export function GoalsPage() {
                   <YAxis
                     stroke="rgba(255,255,255,0.3)"
                     tick={{ fontSize: 11 }}
-                    tickFormatter={(v) => formatCompactINR(v).replace('₹', '$')}
+                    tickFormatter={(v) => formatCompactINR(v)}
                   />
                   <Tooltip
                     contentStyle={{ backgroundColor: '#121416', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}
-                    formatter={(value) => formatINR(Number(value)).replace('₹', '$')}
+                    formatter={(value) => formatINR(Number(value))}
                   />
                   <ReferenceLine y={parsedGoal} stroke="#e9c349" strokeDasharray="6 4" label={{ value: 'Target', fill: '#e9c349', fontSize: 12, position: 'right' }} />
                   <Area type="monotone" dataKey="principal" stroke="#333537" fill="#333537" strokeWidth={2} name="Invested" dot={false} />
@@ -227,15 +227,15 @@ export function GoalsPage() {
                 </div>
                 <p className="font-body text-sm text-on-surface-variant mb-6">
                   {isShort
-                    ? `Based on your current $${effectiveSavings}/mo contribution, you will face a shortfall.`
-                    : `Your current $${effectiveSavings}/mo covers the required SIP amount.`}
+                    ? `Based on your current ₹${effectiveSavings}/mo contribution, you will face a shortfall.`
+                    : `Your current ₹${effectiveSavings}/mo covers the required SIP amount.`}
                 </p>
               </div>
               {isShort && (
                 <div>
                   <div className="flex justify-between items-baseline mb-2">
                     <span className="font-body text-xs text-on-surface-variant uppercase tracking-wider">Monthly Shortfall</span>
-                    <span className="font-headline text-2xl font-bold text-tertiary">-${Math.round(gap).toLocaleString()}</span>
+                    <span className="font-headline text-2xl font-bold text-tertiary">-₹{Math.round(gap).toLocaleString()}</span>
                   </div>
                   <div className="w-full bg-surface-variant h-2 rounded-full overflow-hidden">
                     <div className="bg-tertiary h-full" style={{ width: `${Math.min((gap / requiredSip) * 100, 100)}%` }}></div>
@@ -256,7 +256,7 @@ export function GoalsPage() {
                 <div className="flex items-center justify-between bg-surface-variant/50 p-4 rounded-xl">
                   <span className="font-body text-sm text-on-surface font-medium">+3 Years</span>
                   <span className="font-headline text-lg font-bold text-primary">
-                    SIP drops to ${Math.round(sipIfPlus3Years).toLocaleString()}
+                    SIP drops to ₹{Math.round(sipIfPlus3Years).toLocaleString()}
                   </span>
                 </div>
               </div>

@@ -104,7 +104,7 @@ export function ProfilePage() {
               <p className="font-body text-on-surface-variant text-sm font-medium">Declared Inflow</p>
             </div>
             <h3 className="font-headline text-4xl font-extrabold text-on-surface tracking-tight">
-              ${formatCompactINR(profile.monthlySalary).replace('₹', '')}<span className="text-xl text-on-surface-variant font-medium">/mo</span>
+              {formatCompactINR(profile.monthlySalary)}<span className="text-xl text-on-surface-variant font-medium">/mo</span>
             </h3>
           </div>
           <div className="mt-8">
@@ -125,7 +125,7 @@ export function ProfilePage() {
               <p className="font-body text-on-surface-variant text-sm font-medium">Vault Reserves (Savings)</p>
             </div>
             <h3 className="font-headline text-4xl font-extrabold text-on-surface tracking-tight">
-              ${formatINR(profile.savings).replace('₹', '')}
+              {formatINR(profile.savings)}
             </h3>
             <p className="font-body text-secondary text-xs mt-2">+4.2% optimized yield</p>
           </div>
@@ -202,7 +202,7 @@ export function ProfilePage() {
               
               <div className="grid grid-cols-2 gap-6">
                 <div className="flex flex-col">
-                  <label className="font-body text-xs text-on-surface-variant uppercase tracking-wider mb-2">Monthly Salary ($)</label>
+                  <label className="font-body text-xs text-on-surface-variant uppercase tracking-wider mb-2">Monthly Salary (₹)</label>
                   <input
                     className="bg-transparent border-b-2 border-surface-variant focus:border-primary text-xl font-headline font-bold text-on-surface p-2 focus:ring-0 outline-none transition-colors"
                     value={draftSalary}
@@ -212,7 +212,7 @@ export function ProfilePage() {
                 </div>
                 
                 <div className="flex flex-col">
-                  <label className="font-body text-xs text-on-surface-variant uppercase tracking-wider mb-2">Total Savings ($)</label>
+                  <label className="font-body text-xs text-on-surface-variant uppercase tracking-wider mb-2">Total Savings (₹)</label>
                   <input
                     className="bg-transparent border-b-2 border-surface-variant focus:border-primary text-xl font-headline font-bold text-on-surface p-2 focus:ring-0 outline-none transition-colors"
                     value={draftSavings}
